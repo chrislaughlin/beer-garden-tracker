@@ -6,6 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
+    "env:pull:prod": "npx vercel env pull .env.local --environment=production --yes",
     "lint": "next lint",
     "typecheck": "tsc --noEmit"
   },
@@ -22,7 +23,7 @@
     "date-fns": "^4.1.0",
     "lucide-react": "^0.468.0",
     "maplibre-gl": "^5.0.0",
-    "next": "15.1.2",
+    "next": "15.1.11",
     "react": "19.0.0",
     "react-dom": "19.0.0",
     "react-hook-form": "^7.53.2",
