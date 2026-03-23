@@ -2,9 +2,16 @@ import Link from 'next/link';
 import { beerGardenService } from '@/lib/services/beer-garden-service';
 import { Card } from '@/components/ui/card';
 import { StatusChip } from '@/components/admin/status-chip';
+import { getAdminAccessState } from '@/lib/auth';
 
-export default function AdminVenuesPage() {
-  const venues = beerGardenService.listForAdmin();
+export default async function AdminVenuesPage() {
+  const access = await getAdminAccessState();
+
+  if (!access.isAdmin) {
+    return null;
+  }
+
+  const venues = await beerGardenService.listForAdmin();
   return (
     <div className="space-y-5">
       <div><p className="text-sm uppercase tracking-[0.24em] text-secondary">Admin venues</p><h1 className="text-3xl font-bold">All beer gardens</h1></div>

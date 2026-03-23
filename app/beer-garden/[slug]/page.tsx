@@ -12,7 +12,7 @@ import { PhotoGrid } from '@/components/cards/photo-grid';
 
 export default async function BeerGardenDetailPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const venue = beerGardenService.getBySlug(slug);
+  const venue = await beerGardenService.getBySlug(slug);
   if (!venue) notFound();
   const sunset = getSunsetSummary(venue.sunsetTime);
   return (

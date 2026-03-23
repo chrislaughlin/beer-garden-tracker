@@ -2,9 +2,16 @@ import Link from 'next/link';
 import { adminModerationService } from '@/lib/services/admin-moderation-service';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { getAdminAccessState } from '@/lib/auth';
 
-export default function AdminPage() {
-  const metrics = adminModerationService.getMetrics();
+export default async function AdminPage() {
+  const access = await getAdminAccessState();
+
+  if (!access.isAdmin) {
+    return null;
+  }
+
+  const metrics = await adminModerationService.getMetrics();
   return (
     <div className="space-y-6">
       <section className="rounded-[2rem] bg-slate-950 p-6 text-white shadow-soft">

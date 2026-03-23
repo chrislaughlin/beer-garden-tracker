@@ -2,8 +2,21 @@ create extension if not exists pgcrypto;
 create extension if not exists postgis;
 create extension if not exists pg_trgm;
 
-create type venue_status as enum ('pending', 'approved', 'flagged', 'rejected', 'closed');
-create type moderation_status as enum ('pending', 'approved', 'flagged', 'rejected');
+do $$
+begin
+  if not exists (select 1 from pg_type where typname = 'venue_status') then
+    create type venue_status as enum ('pending', 'approved', 'flagged', 'rejected', 'closed');
+  end if;
+end
+$$;
+
+do $$
+begin
+  if not exists (select 1 from pg_type where typname = 'moderation_status') then
+    create type moderation_status as enum ('pending', 'approved', 'flagged', 'rejected');
+  end if;
+end
+$$;
 
 create table if not exists admin_users (
   user_id uuid primary key,

@@ -32,7 +32,7 @@ Beer Garden Tracker is a mobile-first MVP for discovering and contributing Belfa
 ## Data strategy
 
 - Region is restricted to `belfast` for MVP.
-- Only a tiny demo dataset is included.
+- `db/seed.sql` provides a small starter dataset, but the app now reads from live Supabase tables.
 - New venues are intended to be created through the app itself.
 - Status model supports `pending`, `approved`, `flagged`, `rejected`, and `closed`.
 - Trusted admin access should be enforced by allowlisted Supabase user IDs or an `admin_users` table.
@@ -86,15 +86,16 @@ See `.env.example` for:
 
 ## Assumptions
 
-- This repo currently uses in-memory demo data to make the MVP runnable before wiring live Supabase queries.
+- Public reads and the basic add/review writes are wired to live Supabase now.
+- Public write actions currently use trusted server-side inserts; anonymous-auth ownership still needs to be wired properly.
 - The visual map is represented by a polished placeholder panel, ready to swap for a live MapLibre component.
 - Sunset labels are intentionally simple in V1 and should later fetch real Open-Meteo sunset data server-side.
-- Admin route restriction is represented by `isTrustedAdmin`; production wiring should verify the current Supabase session server-side before rendering admin pages.
+- Admin route restriction is enforced server-side against the current Supabase session and `admin_users`.
 
 ## Next steps
 
-1. Replace demo services with real Supabase queries and mutations.
-2. Add server actions or route handlers for Turnstile validation and rate limiting.
+1. Replace service-role-backed public writes with anon-auth-owned writes that respect RLS directly.
+2. Add Turnstile validation and rate limiting to the public submit flows.
 3. Swap in a live MapLibre map with pin placement and bbox search.
 4. Add photo upload flows to Supabase Storage.
 5. Connect Open-Meteo sunset fetches and cache results per venue/day.

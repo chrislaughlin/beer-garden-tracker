@@ -5,10 +5,17 @@ import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { StatusChip } from '@/components/admin/status-chip';
+import { getAdminAccessState } from '@/lib/auth';
 
 export default async function AdminVenueDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const access = await getAdminAccessState();
+
+  if (!access.isAdmin) {
+    return null;
+  }
+
   const { id } = await params;
-  const venue = beerGardenService.getById(id);
+  const venue = await beerGardenService.getById(id);
   if (!venue) notFound();
   return (
     <div className="space-y-5">

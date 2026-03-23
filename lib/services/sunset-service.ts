@@ -4,6 +4,13 @@ export interface SunsetSummary {
   label: 'Plenty of sun left' | 'Good beer garden time' | 'Last of the sun' | 'Sun’s gone';
 }
 
+export function getPlaceholderSunsetIso(now = new Date()) {
+  const sunset = new Date(now);
+  sunset.setHours(18, 39, 0, 0);
+
+  return sunset.toISOString();
+}
+
 export function getSunsetSummary(sunsetIso: string, now = new Date()): SunsetSummary {
   const sunset = new Date(sunsetIso);
   const minutesLeft = Math.round((sunset.getTime() - now.getTime()) / 60000);

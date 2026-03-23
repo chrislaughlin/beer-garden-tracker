@@ -3,8 +3,8 @@ import { VenueCard } from '@/components/cards/venue-card';
 import { beerGardenService } from '@/lib/services/beer-garden-service';
 import { Input } from '@/components/ui/input';
 
-export default function ExplorePage() {
-  const venues = beerGardenService.listNearby();
+export default async function ExplorePage() {
+  const venues = await beerGardenService.listNearby();
   return (
     <div className="space-y-5">
       <div className="sticky top-4 z-10 rounded-[2rem] bg-white/90 p-4 shadow-soft backdrop-blur">

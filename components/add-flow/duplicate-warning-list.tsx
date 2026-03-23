@@ -2,8 +2,8 @@ import Link from 'next/link';
 import { duplicateDetectionService } from '@/lib/services/duplicate-detection-service';
 import { Card } from '@/components/ui/card';
 
-export function DuplicateWarningList({ name }: { name: string }) {
-  const matches = name ? duplicateDetectionService.findPossibleDuplicates(name) : [];
+export async function DuplicateWarningList({ name }: { name: string }) {
+  const matches = name ? await duplicateDetectionService.findPossibleDuplicates(name) : [];
   if (!matches.length) return null;
   return (
     <Card className="border border-amber-200 bg-amber-50 p-4">

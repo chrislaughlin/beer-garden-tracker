@@ -5,8 +5,8 @@ import { MapPreviewCard } from '@/components/cards/map-preview-card';
 import { EmptyStateBlock } from '@/components/cards/empty-state-block';
 import { Button } from '@/components/ui/button';
 
-export default function HomePage() {
-  const venues = beerGardenService.listNearby();
+export default async function HomePage() {
+  const venues = await beerGardenService.listNearby();
   return (
     <div className="space-y-6">
       <section className="rounded-[2rem] bg-slate-950 p-6 text-white shadow-soft">
