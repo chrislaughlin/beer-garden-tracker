@@ -98,25 +98,49 @@ async function getPreviewVenueIds() {
   return new Set(await getSubmissionPreviewIds());
 }
 
-async function listPreviewVenueRows(previewVenueIds: Set<string>) {
-  const ids = Array.from(previewVenueIds);
-
-  if (!ids.length) {
-    return [];
-  }
-
+async function listBeerGardenRows() {
   const supabase = getServiceRoleClient();
   const { data, error } = await supabase
     .from('beer_gardens')
     .select('*')
     .eq('region', 'belfast')
-    .in('id', ids);
+    .order('name');
 
   if (error) {
     throw error;
   }
 
   return (data ?? []) as BeerGardenRow[];
+}
+
+async function getBeerGardenRowBySlug(slug: string) {
+  const supabase = getServiceRoleClient();
+  const { data, error } = await supabase
+    .from('beer_gardens')
+    .select('*')
+    .eq('slug', slug)
+    .maybeSingle();
+
+  if (error) {
+    throw error;
+  }
+
+  return data as BeerGardenRow | null;
+}
+
+async function getBeerGardenRowById(id: string) {
+  const supabase = getServiceRoleClient();
+  const { data, error } = await supabase
+    .from('beer_gardens')
+    .select('*')
+    .eq('id', id)
+    .maybeSingle();
+
+  if (error) {
+    throw error;
+  }
+
+  return data as BeerGardenRow | null;
 }
 
 async function resolvePhotoUrls(photos: PhotoRow[]) {
@@ -192,41 +216,38 @@ async function hydrateVenues(
     return [];
   }
 
-  const supabase = await getPublicServerClient();
+  const publicClient = await getPublicServerClient();
+  const serviceRoleClient = getServiceRoleClient();
   const venueIds = rows.map((row) => row.id);
   const previewIds = venueIds.filter((venueId) => previewVenueIds.has(venueId));
-  const serviceRoleClient = previewIds.length ? getServiceRoleClient() : null;
 
   const [
     { data: tagRows, error: tagError },
     { data: reviewRows, error: reviewError },
     { data: photoRows, error: photoError },
-    { data: previewTagRows, error: previewTagError },
     { data: previewReviewRows, error: previewReviewError },
     { data: previewPhotoRows, error: previewPhotoError }
   ] = await Promise.all([
-    supabase.from('venue_tags').select('beer_garden_id, tag').in('beer_garden_id', venueIds),
-    supabase
+    // Venue rows are intentionally fetched with the service role so pending venues stay visible in the dogfood app.
+    serviceRoleClient.from('venue_tags').select('beer_garden_id, tag').in('beer_garden_id', venueIds),
+    publicClient
       .from('reviews')
       .select('id, beer_garden_id, user_id, rating, text, sunny_when_visited, status, created_at')
       .in('beer_garden_id', venueIds)
       .order('created_at', { ascending: false }),
-    supabase
+    publicClient
       .from('photos')
       .select('id, beer_garden_id, review_id, storage_path, uploaded_by_user_id, moderation_status, created_at')
       .in('beer_garden_id', venueIds)
       .order('created_at', { ascending: false }),
-    previewIds.length && serviceRoleClient
-      ? serviceRoleClient.from('venue_tags').select('beer_garden_id, tag').in('beer_garden_id', previewIds)
-      : Promise.resolve({ data: [] as VenueTagRow[], error: null }),
-    previewIds.length && serviceRoleClient
+    previewIds.length
       ? serviceRoleClient
         .from('reviews')
         .select('id, beer_garden_id, user_id, rating, text, sunny_when_visited, status, created_at')
         .in('beer_garden_id', previewIds)
         .order('created_at', { ascending: false })
       : Promise.resolve({ data: [] as ReviewRow[], error: null }),
-    previewIds.length && serviceRoleClient
+    previewIds.length
       ? serviceRoleClient
         .from('photos')
         .select('id, beer_garden_id, review_id, storage_path, uploaded_by_user_id, moderation_status, created_at')
@@ -247,10 +268,6 @@ async function hydrateVenues(
     throw photoError;
   }
 
-  if (previewTagError) {
-    throw previewTagError;
-  }
-
   if (previewReviewError) {
     throw previewReviewError;
   }
@@ -260,7 +277,7 @@ async function hydrateVenues(
   }
 
   const mergedTagRows = uniqueBy(
-    [...(tagRows ?? []), ...(previewTagRows ?? [])],
+    [...(tagRows ?? [])],
     (tag) => `${tag.beer_garden_id}:${tag.tag}`
   );
   const mergedReviewRows = uniqueBy(
@@ -332,35 +349,15 @@ function applyEveningSun(rows: BeerGardenRow[], hasEveningSun?: boolean) {
 
 export const beerGardenService = {
   async listNearby(options: ListNearbyOptions = {}) {
-    const [supabase, previewVenueIds] = await Promise.all([
-      getPublicServerClient(),
+    const [rows, previewVenueIds] = await Promise.all([
+      listBeerGardenRows(),
       getPreviewVenueIds()
     ]);
-    const previewRows = await listPreviewVenueRows(previewVenueIds);
-    const { data, error } = await supabase
-      .from('beer_gardens')
-      .select('*')
-      .eq('region', 'belfast')
-      .order('name');
-
-    if (error) {
-      throw error;
-    }
-
-    const mergedRowsById = new Map<string, BeerGardenRow>();
     const tags = uniqueStrings(options.tags ?? []);
     const origin = options.origin ?? BELFAST_CENTER;
 
-    ((data ?? []) as BeerGardenRow[]).forEach((row) => {
-      mergedRowsById.set(row.id, row);
-    });
-
-    previewRows.forEach((row) => {
-      mergedRowsById.set(row.id, row);
-    });
-
     const filteredRows = applyEveningSun(
-      applySearch(Array.from(mergedRowsById.values()), options.query),
+      applySearch(rows, options.query),
       options.hasEveningSun
     );
     const distanceById = new Map<string, number>(
@@ -378,85 +375,30 @@ export const beerGardenService = {
   },
 
   async getBySlug(slug: string) {
-    const supabase = await getPublicServerClient();
-    const { data, error } = await supabase.from('beer_gardens').select('*').eq('slug', slug).maybeSingle();
-
-    if (error) {
-      throw error;
-    }
-
-    let row = data as BeerGardenRow | null;
+    const [row, previewVenueIds] = await Promise.all([
+      getBeerGardenRowBySlug(slug),
+      getPreviewVenueIds()
+    ]);
 
     if (!row) {
-      const previewVenueIds = await getPreviewVenueIds();
-
-      if (!previewVenueIds.size) {
-        return undefined;
-      }
-
-      const serviceRoleClient = getServiceRoleClient();
-      const { data: previewRow, error: previewError } = await serviceRoleClient
-        .from('beer_gardens')
-        .select('*')
-        .eq('slug', slug)
-        .in('id', Array.from(previewVenueIds))
-        .maybeSingle();
-
-      if (previewError) {
-        throw previewError;
-      }
-
-      row = previewRow as BeerGardenRow | null;
-      if (!row) {
-        return undefined;
-      }
-
-      const [venue] = await hydrateVenues([row], new Map(), previewVenueIds);
-      return venue;
+      return undefined;
     }
 
-    const [venue] = await hydrateVenues([row]);
+    const [venue] = await hydrateVenues([row], new Map(), previewVenueIds);
     return venue;
   },
 
   async getById(id: string) {
-    const supabase = await getPublicServerClient();
-    const { data, error } = await supabase.from('beer_gardens').select('*').eq('id', id).maybeSingle();
-
-    if (error) {
-      throw error;
-    }
-
-    let row = data as BeerGardenRow | null;
+    const [row, previewVenueIds] = await Promise.all([
+      getBeerGardenRowById(id),
+      getPreviewVenueIds()
+    ]);
 
     if (!row) {
-      const previewVenueIds = await getPreviewVenueIds();
-
-      if (!previewVenueIds.has(id)) {
-        return undefined;
-      }
-
-      const serviceRoleClient = getServiceRoleClient();
-      const { data: previewRow, error: previewError } = await serviceRoleClient
-        .from('beer_gardens')
-        .select('*')
-        .eq('id', id)
-        .maybeSingle();
-
-      if (previewError) {
-        throw previewError;
-      }
-
-      row = previewRow as BeerGardenRow | null;
-      if (!row) {
-        return undefined;
-      }
-
-      const [venue] = await hydrateVenues([row], new Map(), previewVenueIds);
-      return venue;
+      return undefined;
     }
 
-    const [venue] = await hydrateVenues([row]);
+    const [venue] = await hydrateVenues([row], new Map(), previewVenueIds);
     return venue;
   },
 
