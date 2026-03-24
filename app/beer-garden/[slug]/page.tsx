@@ -6,6 +6,7 @@ import { BeerGardenMap } from '@/components/maps/beer-garden-map';
 import { beerGardenService } from '@/lib/services/beer-garden-service';
 import { DEFAULT_DETAIL_ZOOM } from '@/lib/maps';
 import { getSunsetSummary } from '@/lib/services/sunset-service';
+import { getFallbackPhoto } from '@/lib/data/fallback-photos';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -24,6 +25,7 @@ export default async function BeerGardenDetailPage({
   const venue = await beerGardenService.getBySlug(slug);
   if (!venue) notFound();
   const sunset = getSunsetSummary(venue.sunsetTime);
+  const photoUrl = venue.photos[0]?.url ?? getFallbackPhoto(venue.slug);
   const submissionMessage = feedback?.submitted === '1'
     ? venue.status === 'approved'
       ? 'Venue submitted and published.'
@@ -40,7 +42,7 @@ export default async function BeerGardenDetailPage({
       ) : null}
       <section className="overflow-hidden rounded-[2rem] bg-white shadow-soft">
         <div className="relative h-72 w-full">
-          <Image src={venue.photos[0]?.url ?? 'https://images.unsplash.com/photo-1516997121675-4c2d1684aa3e?auto=format&fit=crop&w=1200&q=80'} alt={venue.name} fill className="object-cover" />
+          <Image src={photoUrl} alt={venue.name} fill className="object-cover" />
           <div className="absolute inset-0 bg-gradient-to-t from-slate-950/75 via-slate-900/20 to-transparent" />
           <div className="absolute inset-x-0 bottom-0 p-5 text-white">
             <p className="text-sm uppercase tracking-[0.24em] text-amber-300">Belfast beer garden</p>

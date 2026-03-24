@@ -6,14 +6,16 @@ import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { formatDistanceKm } from '@/lib/utils';
 import { getSunsetSummary } from '@/lib/services/sunset-service';
+import { getFallbackPhoto } from '@/lib/data/fallback-photos';
 
 export function VenueCard({ venue }: { venue: BeerGarden }) {
   const sunset = getSunsetSummary(venue.sunsetTime);
+  const photoUrl = venue.photos[0]?.url ?? getFallbackPhoto(venue.slug);
   return (
     <Link href={`/beer-garden/${venue.slug}`}>
       <Card className="overflow-hidden">
         <div className="relative h-44 w-full">
-          <Image src={venue.photos[0]?.url ?? 'https://images.unsplash.com/photo-1516997121675-4c2d1684aa3e?auto=format&fit=crop&w=1200&q=80'} alt={venue.name} fill className="object-cover" />
+          <Image src={photoUrl} alt={venue.name} fill className="object-cover" />
           <div className="absolute inset-x-0 top-0 flex justify-between p-3">
             <Badge className="bg-white/85 text-slate-900">{sunset.label}</Badge>
             <Badge className="bg-slate-950/75 text-white">{venue.status}</Badge>
