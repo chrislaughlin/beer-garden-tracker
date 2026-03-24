@@ -2,6 +2,8 @@
 
 import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
+import { appendSubmissionPreviewId } from '@/lib/submission-preview';
+import { reverseGeocodeCoordinates } from '@/lib/services/geocoding-service';
 import { getServiceRoleClient } from '@/lib/supabase';
 import { slugify } from '@/lib/utils';
 import { addVenueSchema } from '@/lib/validation';
@@ -62,6 +64,7 @@ export async function submitVenueAction(formData: FormData) {
   const supabase = getServiceRoleClient();
   const baseSlug = slugify(parsed.data.name) || 'beer-garden';
   const slug = await resolveUniqueSlug(baseSlug);
+  const address = parsed.data.address ?? await reverseGeocodeCoordinates(parsed.data.lat, parsed.data.lng);
 
   const { data: venue, error } = await supabase
     .from('beer_gardens')
@@ -70,12 +73,12 @@ export async function submitVenueAction(formData: FormData) {
       name: parsed.data.name,
       lat: parsed.data.lat,
       lng: parsed.data.lng,
-      address: parsed.data.address,
+      address,
       description: parsed.data.description,
       region: parsed.data.region,
       source: 'user',
       has_evening_sun: parsed.data.hasEveningSun ?? false,
-      status: 'pending',
+      status: 'approved',
       confidence_score: 0.6,
       created_by_user_id: null
     })
@@ -103,6 +106,9 @@ export async function submitVenueAction(formData: FormData) {
   revalidatePath('/explore');
   revalidatePath('/admin');
   revalidatePath('/admin/venues');
+  revalidatePath(`/beer-garden/${slug}`);
 
-  redirect(buildRedirect('/add', { success: 'Venue submitted. It is now waiting for moderation.' }));
+  await appendSubmissionPreviewId(venue.id);
+
+  redirect(buildRedirect(`/beer-garden/${slug}`, { submitted: '1' }));
 }

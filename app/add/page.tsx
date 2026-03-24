@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { Camera, MapPinned, Tag, CheckCircle2 } from 'lucide-react';
+import { LocationPicker } from '@/components/maps/location-picker';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -28,15 +29,10 @@ export default async function AddBeerGardenPage({
         <form action={submitVenueAction}>
           <Card className="space-y-5 p-5">
             <Step number="1" title="Pick the spot on the map" icon={<MapPinned className="h-5 w-5" />}>
-              <div className="h-56 rounded-[2rem] bg-[linear-gradient(135deg,rgba(77,124,15,0.15),rgba(245,158,11,0.15))]" />
-              <div className="mt-3 grid gap-3 sm:grid-cols-2">
-                <Input name="lat" type="number" step="0.000001" placeholder="Latitude, e.g. 54.5839" required />
-                <Input name="lng" type="number" step="0.000001" placeholder="Longitude, e.g. -5.9345" required />
-              </div>
+              <LocationPicker />
             </Step>
             <Step number="2" title="Name the venue">
               <Input name="name" placeholder="Venue name" required />
-              <Input className="mt-3" name="address" placeholder="Address or area" />
             </Step>
             <Step number="3" title="Optional details and tags" icon={<Tag className="h-5 w-5" />}>
               <Textarea name="description" placeholder="What makes this spot worth adding?" />
@@ -57,7 +53,7 @@ export default async function AddBeerGardenPage({
               <div className="rounded-[2rem] border border-dashed border-border bg-muted p-5 text-sm text-slate-600">Photo upload is still a follow-up. Submit the venue first and moderation can review it immediately.</div>
             </Step>
             <Step number="5" title="Review and submit" icon={<CheckCircle2 className="h-5 w-5" />}>
-              <div className="rounded-3xl bg-amber-50 p-4 text-sm text-slate-700">New venues are written to Supabase immediately, then stay pending until an admin approves them.</div>
+              <div className="rounded-3xl bg-amber-50 p-4 text-sm text-slate-700">New venues are written to Supabase and published immediately. You can still unapprove them later from admin if needed.</div>
               <div className="mt-3 flex gap-3"><Button type="submit">Submit venue</Button></div>
             </Step>
           </Card>
@@ -67,8 +63,8 @@ export default async function AddBeerGardenPage({
             <h2 className="text-xl font-bold">Submission guardrails</h2>
             <ul className="mt-4 space-y-3 text-sm text-slate-700">
               <li>• Region is locked to <strong>belfast</strong> for MVP.</li>
-              <li>• Venue submissions now write straight to Supabase.</li>
-              <li>• Public visibility still follows moderation status.</li>
+              <li>• Venue submissions now write straight to Supabase and default to approved.</li>
+              <li>• Address is reverse-geocoded from the selected map pin and can be edited before submit.</li>
               <li>• Turnstile, anon auth ownership, and upload flow are still next steps.</li>
             </ul>
           </Card>

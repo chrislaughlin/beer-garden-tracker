@@ -1,4 +1,5 @@
 import { getPlaceholderSunsetIso } from '@/lib/services/sunset-service';
+import { getSubmissionPreviewIds } from '@/lib/submission-preview';
 import { getPublicServerClient, getServiceRoleClient } from '@/lib/supabase';
 import type { BeerGarden, Photo, Review } from '@/lib/types';
 
@@ -58,6 +59,44 @@ function groupBy<T>(items: T[], getKey: (item: T) => string) {
     groups.set(key, [...(groups.get(key) ?? []), item]);
     return groups;
   }, new Map());
+}
+
+function getDistanceMeters(fromLat: number, fromLng: number, toLat: number, toLng: number) {
+  const earthRadiusMeters = 6371000;
+  const toRadians = (value: number) => value * (Math.PI / 180);
+  const latDelta = toRadians(toLat - fromLat);
+  const lngDelta = toRadians(toLng - fromLng);
+  const fromLatRadians = toRadians(fromLat);
+  const toLatRadians = toRadians(toLat);
+  const haversine = Math.sin(latDelta / 2) ** 2
+    + Math.cos(fromLatRadians) * Math.cos(toLatRadians) * Math.sin(lngDelta / 2) ** 2;
+
+  return 2 * earthRadiusMeters * Math.asin(Math.sqrt(haversine));
+}
+
+async function getPreviewVenueIds() {
+  return new Set(await getSubmissionPreviewIds());
+}
+
+async function listPreviewVenueRows(previewVenueIds: Set<string>) {
+  const ids = Array.from(previewVenueIds);
+
+  if (!ids.length) {
+    return [];
+  }
+
+  const supabase = getServiceRoleClient();
+  const { data, error } = await supabase
+    .from('beer_gardens')
+    .select('*')
+    .eq('region', 'belfast')
+    .in('id', ids);
+
+  if (error) {
+    throw error;
+  }
+
+  return (data ?? []) as BeerGardenRow[];
 }
 
 async function resolvePhotoUrls(photos: PhotoRow[]) {
@@ -124,15 +163,28 @@ function mapPhoto(photo: PhotoRow, signedUrlByPath: Map<string, string>): Photo 
   };
 }
 
-async function hydrateVenues(rows: BeerGardenRow[], distanceById = new Map<string, number>()) {
+async function hydrateVenues(
+  rows: BeerGardenRow[],
+  distanceById = new Map<string, number>(),
+  previewVenueIds = new Set<string>()
+) {
   if (!rows.length) {
     return [];
   }
 
   const supabase = await getPublicServerClient();
   const venueIds = rows.map((row) => row.id);
+  const previewIds = venueIds.filter((venueId) => previewVenueIds.has(venueId));
+  const serviceRoleClient = previewIds.length ? getServiceRoleClient() : null;
 
-  const [{ data: tagRows, error: tagError }, { data: reviewRows, error: reviewError }, { data: photoRows, error: photoError }] = await Promise.all([
+  const [
+    { data: tagRows, error: tagError },
+    { data: reviewRows, error: reviewError },
+    { data: photoRows, error: photoError },
+    { data: previewTagRows, error: previewTagError },
+    { data: previewReviewRows, error: previewReviewError },
+    { data: previewPhotoRows, error: previewPhotoError }
+  ] = await Promise.all([
     supabase.from('venue_tags').select('beer_garden_id, tag').in('beer_garden_id', venueIds),
     supabase
       .from('reviews')
@@ -143,7 +195,24 @@ async function hydrateVenues(rows: BeerGardenRow[], distanceById = new Map<strin
       .from('photos')
       .select('id, beer_garden_id, review_id, storage_path, uploaded_by_user_id, moderation_status, created_at')
       .in('beer_garden_id', venueIds)
-      .order('created_at', { ascending: false })
+      .order('created_at', { ascending: false }),
+    previewIds.length && serviceRoleClient
+      ? serviceRoleClient.from('venue_tags').select('beer_garden_id, tag').in('beer_garden_id', previewIds)
+      : Promise.resolve({ data: [] as VenueTagRow[], error: null }),
+    previewIds.length && serviceRoleClient
+      ? serviceRoleClient
+        .from('reviews')
+        .select('id, beer_garden_id, user_id, rating, text, sunny_when_visited, status, created_at')
+        .in('beer_garden_id', previewIds)
+        .order('created_at', { ascending: false })
+      : Promise.resolve({ data: [] as ReviewRow[], error: null }),
+    previewIds.length && serviceRoleClient
+      ? serviceRoleClient
+        .from('photos')
+        .select('id, beer_garden_id, review_id, storage_path, uploaded_by_user_id, moderation_status, created_at')
+        .in('beer_garden_id', previewIds)
+        .order('created_at', { ascending: false })
+      : Promise.resolve({ data: [] as PhotoRow[], error: null })
   ]);
 
   if (tagError) {
@@ -158,10 +227,25 @@ async function hydrateVenues(rows: BeerGardenRow[], distanceById = new Map<strin
     throw photoError;
   }
 
-  const tagsByVenue = groupBy(tagRows ?? [], (tag) => tag.beer_garden_id);
-  const reviewsByVenue = groupBy(reviewRows ?? [], (review) => review.beer_garden_id);
-  const photosByVenue = groupBy(photoRows ?? [], (photo) => photo.beer_garden_id ?? '');
-  const signedUrlByPath = await resolvePhotoUrls(photoRows ?? []);
+  if (previewTagError) {
+    throw previewTagError;
+  }
+
+  if (previewReviewError) {
+    throw previewReviewError;
+  }
+
+  if (previewPhotoError) {
+    throw previewPhotoError;
+  }
+
+  const mergedTagRows = [...(tagRows ?? []), ...(previewTagRows ?? [])];
+  const mergedReviewRows = [...(reviewRows ?? []), ...(previewReviewRows ?? [])];
+  const mergedPhotoRows = [...(photoRows ?? []), ...(previewPhotoRows ?? [])];
+  const tagsByVenue = groupBy(mergedTagRows, (tag) => tag.beer_garden_id);
+  const reviewsByVenue = groupBy(mergedReviewRows, (review) => review.beer_garden_id);
+  const photosByVenue = groupBy(mergedPhotoRows, (photo) => photo.beer_garden_id ?? '');
+  const signedUrlByPath = await resolvePhotoUrls(mergedPhotoRows);
 
   return rows.map((row) => {
     const reviews = (reviewsByVenue.get(row.id) ?? []).map(mapReview);
@@ -226,8 +310,12 @@ function applySearch(rows: BeerGardenRow[], query?: string) {
 
 export const beerGardenService = {
   async listNearby(query?: string, filters: string[] = []) {
-    const supabase = await getPublicServerClient();
-    const distanceById = await listNearbyDistanceRows();
+    const [supabase, distanceById, previewVenueIds] = await Promise.all([
+      getPublicServerClient(),
+      listNearbyDistanceRows(),
+      getPreviewVenueIds()
+    ]);
+    const previewRows = await listPreviewVenueRows(previewVenueIds);
     const nearbyIds = Array.from(distanceById.keys());
     const venueQuery = supabase.from('beer_gardens').select('*').eq('region', 'belfast');
 
@@ -239,7 +327,35 @@ export const beerGardenService = {
       throw error;
     }
 
-    const hydrated = await hydrateVenues(applySearch((data ?? []) as BeerGardenRow[], query), distanceById);
+    previewRows.forEach((row) => {
+      if (distanceById.has(row.id)) {
+        return;
+      }
+
+      const distanceMeters = getDistanceMeters(BELFAST_CENTER.lat, BELFAST_CENTER.lng, row.lat, row.lng);
+
+      if (distanceMeters <= BELFAST_CENTER.radiusMeters) {
+        distanceById.set(row.id, distanceMeters);
+      }
+    });
+
+    const mergedRowsById = new Map<string, BeerGardenRow>();
+
+    ((data ?? []) as BeerGardenRow[]).forEach((row) => {
+      mergedRowsById.set(row.id, row);
+    });
+
+    previewRows
+      .filter((row) => distanceById.has(row.id))
+      .forEach((row) => {
+        mergedRowsById.set(row.id, row);
+      });
+
+    const hydrated = await hydrateVenues(
+      applySearch(Array.from(mergedRowsById.values()), query),
+      distanceById,
+      previewVenueIds
+    );
     return hydrated
       .filter((venue) => filters.length === 0 || filters.every((filter) => venue.tags.includes(filter)))
       .sort((left, right) => left.distanceMeters - right.distanceMeters || right.rating - left.rating);
@@ -253,11 +369,37 @@ export const beerGardenService = {
       throw error;
     }
 
-    if (!data) {
-      return undefined;
+    let row = data as BeerGardenRow | null;
+
+    if (!row) {
+      const previewVenueIds = await getPreviewVenueIds();
+
+      if (!previewVenueIds.size) {
+        return undefined;
+      }
+
+      const serviceRoleClient = getServiceRoleClient();
+      const { data: previewRow, error: previewError } = await serviceRoleClient
+        .from('beer_gardens')
+        .select('*')
+        .eq('slug', slug)
+        .in('id', Array.from(previewVenueIds))
+        .maybeSingle();
+
+      if (previewError) {
+        throw previewError;
+      }
+
+      row = previewRow as BeerGardenRow | null;
+      if (!row) {
+        return undefined;
+      }
+
+      const [venue] = await hydrateVenues([row], new Map(), previewVenueIds);
+      return venue;
     }
 
-    const [venue] = await hydrateVenues([data as BeerGardenRow]);
+    const [venue] = await hydrateVenues([row]);
     return venue;
   },
 
@@ -269,11 +411,36 @@ export const beerGardenService = {
       throw error;
     }
 
-    if (!data) {
-      return undefined;
+    let row = data as BeerGardenRow | null;
+
+    if (!row) {
+      const previewVenueIds = await getPreviewVenueIds();
+
+      if (!previewVenueIds.has(id)) {
+        return undefined;
+      }
+
+      const serviceRoleClient = getServiceRoleClient();
+      const { data: previewRow, error: previewError } = await serviceRoleClient
+        .from('beer_gardens')
+        .select('*')
+        .eq('id', id)
+        .maybeSingle();
+
+      if (previewError) {
+        throw previewError;
+      }
+
+      row = previewRow as BeerGardenRow | null;
+      if (!row) {
+        return undefined;
+      }
+
+      const [venue] = await hydrateVenues([row], new Map(), previewVenueIds);
+      return venue;
     }
 
-    const [venue] = await hydrateVenues([data as BeerGardenRow]);
+    const [venue] = await hydrateVenues([row]);
     return venue;
   },
 

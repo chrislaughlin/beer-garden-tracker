@@ -19,7 +19,7 @@ export default async function HomePage() {
         </div>
       </section>
       <section className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
-        <MapPreviewCard />
+        <MapPreviewCard venues={venues} />
         <div className="rounded-[2rem] bg-white/80 p-5 shadow-soft">
           <p className="text-sm font-semibold uppercase tracking-[0.24em] text-secondary">Quick filters</p>
           <div className="mt-4 flex flex-wrap gap-2">{['Sunny spot', 'Covered seating', 'Dog friendly', 'Food available'].map((filter) => <span key={filter} className="rounded-full bg-muted px-4 py-2 text-sm font-medium text-slate-700">{filter}</span>)}</div>

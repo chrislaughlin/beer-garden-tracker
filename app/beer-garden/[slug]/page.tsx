@@ -2,7 +2,9 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { Clock3, MapPin, Star, SunMedium, Camera, MessageSquareWarning } from 'lucide-react';
+import { BeerGardenMap } from '@/components/maps/beer-garden-map';
 import { beerGardenService } from '@/lib/services/beer-garden-service';
+import { DEFAULT_DETAIL_ZOOM } from '@/lib/maps';
 import { getSunsetSummary } from '@/lib/services/sunset-service';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -10,13 +12,32 @@ import { Card } from '@/components/ui/card';
 import { ReviewCard } from '@/components/cards/review-card';
 import { PhotoGrid } from '@/components/cards/photo-grid';
 
-export default async function BeerGardenDetailPage({ params }: { params: Promise<{ slug: string }> }) {
+export default async function BeerGardenDetailPage({
+  params,
+  searchParams
+}: {
+  params: Promise<{ slug: string }>;
+  searchParams?: Promise<{ submitted?: string }>;
+}) {
   const { slug } = await params;
+  const feedback = searchParams ? await searchParams : undefined;
   const venue = await beerGardenService.getBySlug(slug);
   if (!venue) notFound();
   const sunset = getSunsetSummary(venue.sunsetTime);
+  const submissionMessage = feedback?.submitted === '1'
+    ? venue.status === 'approved'
+      ? 'Venue submitted and published.'
+      : 'Venue submitted. This pending listing is visible only in this browser until moderation approves it.'
+    : venue.status !== 'approved'
+      ? 'This pending listing is visible only in this browser until moderation approves it.'
+      : null;
   return (
     <div className="space-y-6">
+      {submissionMessage ? (
+        <Card className="border border-amber-200 bg-amber-50 p-4 text-sm text-amber-950">
+          {submissionMessage}
+        </Card>
+      ) : null}
       <section className="overflow-hidden rounded-[2rem] bg-white shadow-soft">
         <div className="relative h-72 w-full">
           <Image src={venue.photos[0]?.url ?? 'https://images.unsplash.com/photo-1516997121675-4c2d1684aa3e?auto=format&fit=crop&w=1200&q=80'} alt={venue.name} fill className="object-cover" />
@@ -51,7 +72,20 @@ export default async function BeerGardenDetailPage({ params }: { params: Promise
           </Card>
           <Card className="map-gradient p-5">
             <h2 className="text-xl font-bold">Map snippet</h2>
-            <div className="mt-4 h-52 rounded-[2rem] bg-white/70" />
+            <BeerGardenMap
+              className="mt-4 h-52 rounded-[2rem] border border-white/60"
+              markers={[{
+                id: venue.id,
+                name: venue.name,
+                lat: venue.lat,
+                lng: venue.lng,
+                description: venue.address ?? venue.name
+              }]}
+              selectedMarkerId={venue.id}
+              fitToMarkers={false}
+              zoom={DEFAULT_DETAIL_ZOOM}
+            />
+            {venue.address ? <p className="mt-3 text-sm text-slate-700">{venue.address}</p> : null}
           </Card>
           <Card className="p-5">
             <h2 className="text-xl font-bold">Quick actions</h2>

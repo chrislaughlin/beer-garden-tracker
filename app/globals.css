@@ -1,3 +1,5 @@
+@import 'maplibre-gl/dist/maplibre-gl.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -21,4 +23,62 @@ body {
 
 .status-grid {
   grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+}
+
+.beer-garden-map .maplibregl-map,
+.beer-garden-map .maplibregl-canvas,
+.beer-garden-map .maplibregl-canvas-container {
+  height: 100%;
+  width: 100%;
+}
+
+.beer-garden-map .maplibregl-control-container,
+.beer-garden-map .maplibregl-ctrl-top-right,
+.beer-garden-map .maplibregl-ctrl-bottom-right {
+  border-radius: inherit;
+}
+
+.beer-garden-map .maplibregl-ctrl-group {
+  overflow: hidden;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.12);
+}
+
+.beer-garden-map .maplibregl-ctrl button {
+  height: 34px;
+  width: 34px;
+}
+
+.beer-garden-map .maplibregl-popup-content {
+  border-radius: 1rem;
+  padding: 0.7rem 0.85rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: rgb(15 23 42);
+  box-shadow: 0 20px 45px rgba(15, 23, 42, 0.18);
+}
+
+.beer-garden-map .maplibregl-popup-tip {
+  border-top-color: white;
+}
+
+.beer-garden-map-marker {
+  height: 18px;
+  width: 18px;
+  cursor: pointer;
+  border: 3px solid white;
+  border-radius: 999px;
+  background: linear-gradient(135deg, rgb(245 158 11), rgb(217 119 6));
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.24);
+  transition: transform 160ms ease, box-shadow 160ms ease;
+}
+
+.beer-garden-map-marker:hover,
+.beer-garden-map-marker.is-active {
+  transform: scale(1.12);
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.3);
+}
+
+.beer-garden-map-marker.is-active {
+  background: linear-gradient(135deg, rgb(77 124 15), rgb(163 230 53));
 }

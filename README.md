@@ -33,14 +33,14 @@ Beer Garden Tracker is a mobile-first MVP for discovering and contributing Belfa
 
 - Region is restricted to `belfast` for MVP.
 - `db/seed.sql` provides a small starter dataset, but the app now reads from live Supabase tables.
-- New venues are intended to be created through the app itself.
+- New venues are intended to be created through the app itself and currently publish as `approved` by default.
 - Status model supports `pending`, `approved`, `flagged`, `rejected`, and `closed`.
 - Trusted admin access should be enforced by allowlisted Supabase user IDs or an `admin_users` table.
 
 ## Local setup
 
 1. Copy `.env.example` to `.env.local`.
-2. Add Supabase, Turnstile, and map credentials.
+2. Add Supabase and Turnstile credentials. `NEXT_PUBLIC_MAPTILER_KEY` is optional; without it the app falls back to OpenStreetMap tiles.
 3. Install dependencies:
    ```bash
    npm install
@@ -56,6 +56,7 @@ Beer Garden Tracker is a mobile-first MVP for discovering and contributing Belfa
 See `.env.example` for:
 - Supabase URL and anon key
 - service role key
+- optional MapTiler key
 - Turnstile site/secret keys
 - Open-Meteo base URL
 - admin allowlist user IDs
@@ -65,6 +66,7 @@ See `.env.example` for:
 
 ### Services
 - `beerGardenService`: nearby, detail, and admin venue retrieval
+- `geocodingService`: reverse geocoding for add-flow address autofill
 - `reviewService`: recent review moderation feed
 - `photoService`: moderation feed for uploads
 - `sunsetService`: simple countdown and consumer-friendly labels
@@ -88,7 +90,8 @@ See `.env.example` for:
 
 - Public reads and the basic add/review writes are wired to live Supabase now.
 - Public write actions currently use trusted server-side inserts; anonymous-auth ownership still needs to be wired properly.
-- The visual map is represented by a polished placeholder panel, ready to swap for a live MapLibre component.
+- Add-flow pins now reverse-geocode through MapTiler so the detected address is stored with the venue when possible.
+- User-facing map panels now render through a shared MapLibre component, with OpenStreetMap tiles as the fallback when no MapTiler key is present.
 - Sunset labels are intentionally simple in V1 and should later fetch real Open-Meteo sunset data server-side.
 - Admin route restriction is enforced server-side against the current Supabase session and `admin_users`.
 
@@ -96,6 +99,6 @@ See `.env.example` for:
 
 1. Replace service-role-backed public writes with anon-auth-owned writes that respect RLS directly.
 2. Add Turnstile validation and rate limiting to the public submit flows.
-3. Swap in a live MapLibre map with pin placement and bbox search.
+3. Add bbox search, filtering, and clustering on top of the live MapLibre map.
 4. Add photo upload flows to Supabase Storage.
 5. Connect Open-Meteo sunset fetches and cache results per venue/day.
