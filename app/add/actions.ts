@@ -2,7 +2,6 @@
 
 import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
-import { appendSubmissionPreviewId } from '@/lib/submission-preview';
 import { reverseGeocodeCoordinates } from '@/lib/services/geocoding-service';
 import { getServiceRoleClient } from '@/lib/supabase';
 import { slugify } from '@/lib/utils';
@@ -107,8 +106,5 @@ export async function submitVenueAction(formData: FormData) {
   revalidatePath('/admin');
   revalidatePath('/admin/venues');
   revalidatePath(`/beer-garden/${slug}`);
-
-  await appendSubmissionPreviewId(venue.id);
-
   redirect(buildRedirect(`/beer-garden/${slug}`, { submitted: '1' }));
 }

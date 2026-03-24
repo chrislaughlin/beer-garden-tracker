@@ -53,12 +53,36 @@ type VenueTagRow = {
   tag: string;
 };
 
+function uniqueBy<T>(items: T[], getKey: (item: T) => string) {
+  const seen = new Set<string>();
+
+  return items.filter((item) => {
+    const key = getKey(item);
+
+    if (seen.has(key)) {
+      return false;
+    }
+
+    seen.add(key);
+    return true;
+  });
+}
+
 function groupBy<T>(items: T[], getKey: (item: T) => string) {
   return items.reduce<Map<string, T[]>>((groups, item) => {
     const key = getKey(item);
     groups.set(key, [...(groups.get(key) ?? []), item]);
     return groups;
   }, new Map());
+}
+
+function uniqueStrings(values: string[]) {
+  return uniqueBy(
+    values
+      .map((value) => value.trim())
+      .filter(Boolean),
+    (value) => value
+  );
 }
 
 function getDistanceMeters(fromLat: number, fromLng: number, toLat: number, toLng: number) {
@@ -239,9 +263,18 @@ async function hydrateVenues(
     throw previewPhotoError;
   }
 
-  const mergedTagRows = [...(tagRows ?? []), ...(previewTagRows ?? [])];
-  const mergedReviewRows = [...(reviewRows ?? []), ...(previewReviewRows ?? [])];
-  const mergedPhotoRows = [...(photoRows ?? []), ...(previewPhotoRows ?? [])];
+  const mergedTagRows = uniqueBy(
+    [...(tagRows ?? []), ...(previewTagRows ?? [])],
+    (tag) => `${tag.beer_garden_id}:${tag.tag}`
+  );
+  const mergedReviewRows = uniqueBy(
+    [...(reviewRows ?? []), ...(previewReviewRows ?? [])],
+    (review) => review.id
+  );
+  const mergedPhotoRows = uniqueBy(
+    [...(photoRows ?? []), ...(previewPhotoRows ?? [])],
+    (photo) => photo.id
+  );
   const tagsByVenue = groupBy(mergedTagRows, (tag) => tag.beer_garden_id);
   const reviewsByVenue = groupBy(mergedReviewRows, (review) => review.beer_garden_id);
   const photosByVenue = groupBy(mergedPhotoRows, (photo) => photo.beer_garden_id ?? '');
@@ -273,7 +306,7 @@ async function hydrateVenues(
       createdByUserId: row.created_by_user_id ?? '',
       createdAt: row.created_at,
       updatedAt: row.updated_at,
-      tags: (tagsByVenue.get(row.id) ?? []).map((tag) => tag.tag),
+      tags: uniqueStrings((tagsByVenue.get(row.id) ?? []).map((tag) => tag.tag)),
       distanceMeters: distanceById.get(row.id) ?? 0,
       rating,
       reviewCount,
