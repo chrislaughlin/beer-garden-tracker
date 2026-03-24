@@ -4,6 +4,7 @@ import { VenueCard } from '@/components/cards/venue-card';
 import { MapPreviewCard } from '@/components/cards/map-preview-card';
 import { EmptyStateBlock } from '@/components/cards/empty-state-block';
 import { Button } from '@/components/ui/button';
+import { buildExploreHref, HOME_QUICK_FILTER_TAGS } from '@/lib/discovery';
 
 export default async function HomePage() {
   const venues = await beerGardenService.listNearby();
@@ -22,10 +23,20 @@ export default async function HomePage() {
         <MapPreviewCard venues={venues} />
         <div className="rounded-[2rem] bg-white/80 p-5 shadow-soft">
           <p className="text-sm font-semibold uppercase tracking-[0.24em] text-secondary">Quick filters</p>
-          <div className="mt-4 flex flex-wrap gap-2">{['Sunny spot', 'Covered seating', 'Dog friendly', 'Food available'].map((filter) => <span key={filter} className="rounded-full bg-muted px-4 py-2 text-sm font-medium text-slate-700">{filter}</span>)}</div>
+          <div className="mt-4 flex flex-wrap gap-2">
+            {HOME_QUICK_FILTER_TAGS.map((filter) => (
+              <Link
+                key={filter}
+                className="rounded-full bg-muted px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-white"
+                href={buildExploreHref({ tags: [filter] })}
+              >
+                {filter}
+              </Link>
+            ))}
+          </div>
           <div className="mt-6 grid gap-3 rounded-3xl bg-amber-50 p-4">
             <div><p className="text-sm font-semibold text-amber-900">Sparse data handled gracefully</p><p className="mt-1 text-sm text-slate-700">New submissions can show instantly to the contributor while admins tidy public visibility.</p></div>
-            <div><p className="text-sm font-semibold text-amber-900">Add flow is first-class</p><p className="mt-1 text-sm text-slate-700">Map pin first, quick details, photo upload, then duplicate check before submit.</p></div>
+            <div><p className="text-sm font-semibold text-amber-900">Add flow is first-class</p><p className="mt-1 text-sm text-slate-700">Map pin first, quick details, helpful tags, and a fast submit flow for filling the gaps.</p></div>
           </div>
         </div>
       </section>

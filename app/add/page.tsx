@@ -1,13 +1,12 @@
 import type { ReactNode } from 'react';
-import { Camera, MapPinned, Tag, CheckCircle2 } from 'lucide-react';
+import { MapPinned, Tag, CheckCircle2 } from 'lucide-react';
 import { LocationPicker } from '@/components/maps/location-picker';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { submitVenueAction } from '@/app/add/actions';
-
-const tagOptions = ['Sunny spot', 'Dog friendly', 'Quiet', 'Food available', 'Covered seating'];
+import { VENUE_TAG_SUGGESTIONS } from '@/lib/discovery';
 
 export default async function AddBeerGardenPage({
   searchParams
@@ -25,7 +24,7 @@ export default async function AddBeerGardenPage({
       </section>
       {feedback?.error ? <Card className="border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">{feedback.error}</Card> : null}
       {feedback?.success ? <Card className="border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-700">{feedback.success}</Card> : null}
-      <div className="grid gap-4 lg:grid-cols-[1.05fr_0.95fr]">
+      <div className="mx-auto max-w-3xl">
         <form action={submitVenueAction}>
           <Card className="space-y-5 p-5">
             <Step number="1" title="Pick the spot on the map" icon={<MapPinned className="h-5 w-5" />}>
@@ -41,7 +40,7 @@ export default async function AddBeerGardenPage({
                 This spot usually gets evening sun
               </label>
               <div className="mt-3 flex flex-wrap gap-2">
-                {tagOptions.map((tag) => (
+                {VENUE_TAG_SUGGESTIONS.map((tag) => (
                   <label key={tag} className="flex cursor-pointer items-center gap-2 rounded-full bg-muted px-4 py-2 text-sm text-slate-700">
                     <input name="tags" type="checkbox" value={tag} className="h-4 w-4 rounded border-border text-primary focus:ring-primary" />
                     {tag}
@@ -49,26 +48,11 @@ export default async function AddBeerGardenPage({
                 ))}
               </div>
             </Step>
-            <Step number="4" title="Upload a photo" icon={<Camera className="h-5 w-5" />}>
-              <div className="rounded-[2rem] border border-dashed border-border bg-muted p-5 text-sm text-slate-600">Photo upload is still a follow-up. Submit the venue first and moderation can review it immediately.</div>
-            </Step>
-            <Step number="5" title="Review and submit" icon={<CheckCircle2 className="h-5 w-5" />}>
-              <div className="rounded-3xl bg-amber-50 p-4 text-sm text-slate-700">New venues are written to Supabase and published immediately. You can still unapprove them later from admin if needed.</div>
+            <Step number="4" title="Review and submit" icon={<CheckCircle2 className="h-5 w-5" />}>
               <div className="mt-3 flex gap-3"><Button type="submit">Submit venue</Button></div>
             </Step>
           </Card>
         </form>
-        <div className="space-y-4">
-          <Card className="p-5">
-            <h2 className="text-xl font-bold">Submission guardrails</h2>
-            <ul className="mt-4 space-y-3 text-sm text-slate-700">
-              <li>• Region is locked to <strong>belfast</strong> for MVP.</li>
-              <li>• Venue submissions now write straight to Supabase and default to approved.</li>
-              <li>• Address is reverse-geocoded from the selected map pin and can be edited before submit.</li>
-              <li>• Turnstile, anon auth ownership, and upload flow are still next steps.</li>
-            </ul>
-          </Card>
-        </div>
       </div>
     </div>
   );

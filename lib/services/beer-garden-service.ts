@@ -1,13 +1,9 @@
 import { getPlaceholderSunsetIso } from '@/lib/services/sunset-service';
 import { getSubmissionPreviewIds } from '@/lib/submission-preview';
 import { getPublicServerClient, getServiceRoleClient } from '@/lib/supabase';
+import { BELFAST_CENTER } from '@/lib/maps';
+import type { ListNearbyOptions } from '@/lib/discovery';
 import type { BeerGarden, Photo, Review } from '@/lib/types';
-
-const BELFAST_CENTER = {
-  lat: 54.597,
-  lng: -5.93,
-  radiusMeters: 5000
-};
 
 type BeerGardenRow = {
   id: string;
@@ -317,21 +313,6 @@ async function hydrateVenues(
   });
 }
 
-async function listNearbyDistanceRows() {
-  const supabase = await getPublicServerClient();
-  const { data, error } = await supabase.rpc('nearby_beer_gardens', {
-    search_lat: BELFAST_CENTER.lat,
-    search_lng: BELFAST_CENTER.lng,
-    radius_m: BELFAST_CENTER.radiusMeters
-  });
-
-  if (error || !data) {
-    return new Map<string, number>();
-  }
-
-  return new Map<string, number>((data as Array<{ id: string; distance_m: number }>).map((row) => [row.id, row.distance_m]));
-}
-
 function applySearch(rows: BeerGardenRow[], query?: string) {
   if (!query?.trim()) {
     return rows;
@@ -341,56 +322,58 @@ function applySearch(rows: BeerGardenRow[], query?: string) {
   return rows.filter((row) => row.name.toLowerCase().includes(needle) || row.address?.toLowerCase().includes(needle));
 }
 
+function applyEveningSun(rows: BeerGardenRow[], hasEveningSun?: boolean) {
+  if (!hasEveningSun) {
+    return rows;
+  }
+
+  return rows.filter((row) => Boolean(row.has_evening_sun));
+}
+
 export const beerGardenService = {
-  async listNearby(query?: string, filters: string[] = []) {
-    const [supabase, distanceById, previewVenueIds] = await Promise.all([
+  async listNearby(options: ListNearbyOptions = {}) {
+    const [supabase, previewVenueIds] = await Promise.all([
       getPublicServerClient(),
-      listNearbyDistanceRows(),
       getPreviewVenueIds()
     ]);
     const previewRows = await listPreviewVenueRows(previewVenueIds);
-    const nearbyIds = Array.from(distanceById.keys());
-    const venueQuery = supabase.from('beer_gardens').select('*').eq('region', 'belfast');
-
-    const { data, error } = nearbyIds.length
-      ? await venueQuery.in('id', nearbyIds)
-      : await venueQuery.order('name');
+    const { data, error } = await supabase
+      .from('beer_gardens')
+      .select('*')
+      .eq('region', 'belfast')
+      .order('name');
 
     if (error) {
       throw error;
     }
 
-    previewRows.forEach((row) => {
-      if (distanceById.has(row.id)) {
-        return;
-      }
-
-      const distanceMeters = getDistanceMeters(BELFAST_CENTER.lat, BELFAST_CENTER.lng, row.lat, row.lng);
-
-      if (distanceMeters <= BELFAST_CENTER.radiusMeters) {
-        distanceById.set(row.id, distanceMeters);
-      }
-    });
-
     const mergedRowsById = new Map<string, BeerGardenRow>();
+    const tags = uniqueStrings(options.tags ?? []);
+    const origin = options.origin ?? BELFAST_CENTER;
 
     ((data ?? []) as BeerGardenRow[]).forEach((row) => {
       mergedRowsById.set(row.id, row);
     });
 
-    previewRows
-      .filter((row) => distanceById.has(row.id))
-      .forEach((row) => {
-        mergedRowsById.set(row.id, row);
-      });
+    previewRows.forEach((row) => {
+      mergedRowsById.set(row.id, row);
+    });
+
+    const filteredRows = applyEveningSun(
+      applySearch(Array.from(mergedRowsById.values()), options.query),
+      options.hasEveningSun
+    );
+    const distanceById = new Map<string, number>(
+      filteredRows.map((row) => [row.id, getDistanceMeters(origin.lat, origin.lng, row.lat, row.lng)])
+    );
 
     const hydrated = await hydrateVenues(
-      applySearch(Array.from(mergedRowsById.values()), query),
+      filteredRows,
       distanceById,
       previewVenueIds
     );
     return hydrated
-      .filter((venue) => filters.length === 0 || filters.every((filter) => venue.tags.includes(filter)))
+      .filter((venue) => tags.length === 0 || tags.every((tag) => venue.tags.includes(tag)))
       .sort((left, right) => left.distanceMeters - right.distanceMeters || right.rating - left.rating);
   },
 
