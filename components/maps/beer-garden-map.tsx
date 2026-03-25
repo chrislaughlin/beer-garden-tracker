@@ -114,7 +114,6 @@ export function BeerGardenMap({
         map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'top-right');
         map.dragRotate.disable();
         map.touchZoomRotate.disableRotation();
-        map.scrollZoom.disable();
 
         if (userLocation && isValidCoordinate(userLocation.lat) && isValidCoordinate(userLocation.lng)) {
           const userMarkerElement = document.createElement('div');
