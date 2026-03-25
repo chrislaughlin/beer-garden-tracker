@@ -1,6 +1,6 @@
 'use client';
 
-import { LocateFixed, LoaderCircle, Search, SunMedium } from 'lucide-react';
+import { LocateFixed, LoaderCircle, Search, SunMedium, X } from 'lucide-react';
 import { useDeferredValue, useEffect, useState, useTransition } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { Input } from '@/components/ui/input';
@@ -40,6 +40,7 @@ export function ExploreFilters({ resultCount }: ExploreFiltersProps) {
   );
   const [isPending, startTransition] = useTransition();
   const deferredSearch = useDeferredValue(search);
+  const hasActiveFilters = Boolean(search.trim() || selectedTags.length || hasEveningSun);
 
   function replaceOriginInCurrentUrl(nextOrigin: { lat: number; lng: number } | null) {
     const params = new URLSearchParams(window.location.search);
@@ -195,6 +196,13 @@ export function ExploreFilters({ resultCount }: ExploreFiltersProps) {
     replaceUrl({ tags: nextTags });
   }
 
+  function clearFilters() {
+    setSearch('');
+    setSelectedTags([]);
+    setHasEveningSun(false);
+    replaceUrl({ query: '', tags: [], hasEveningSun: false });
+  }
+
   return (
     <div className="sticky top-4 z-10 rounded-[2rem] bg-white/90 p-4 shadow-soft backdrop-blur">
       <div className="flex items-center gap-3 rounded-2xl border bg-muted px-4 py-3">
@@ -223,7 +231,8 @@ export function ExploreFilters({ resultCount }: ExploreFiltersProps) {
           type="button"
         >
           <SunMedium className="h-4 w-4" />
-          Evening sun
+          <span>Evening sun</span>
+          {hasEveningSun && <X className="h-3.5 w-3.5" />}
         </button>
         {VENUE_TAG_SUGGESTIONS.map((tag) => {
           const isActive = selectedTags.includes(tag);
@@ -233,13 +242,14 @@ export function ExploreFilters({ resultCount }: ExploreFiltersProps) {
               key={tag}
               aria-pressed={isActive}
               className={cn(
-                'min-h-11 rounded-full px-4 py-2 font-medium transition-colors',
+                'inline-flex min-h-11 items-center gap-2 rounded-full px-4 py-2 font-medium transition-colors',
                 isActive ? 'bg-slate-950 text-white shadow-soft' : 'bg-muted text-slate-700 hover:bg-white'
               )}
               onClick={() => toggleTag(tag)}
               type="button"
             >
               {tag}
+              {isActive && <X className="h-3.5 w-3.5" />}
             </button>
           );
         })}
@@ -253,9 +263,20 @@ export function ExploreFilters({ resultCount }: ExploreFiltersProps) {
           )}
           <span>{locationMessage ?? 'Results are sorted from central Belfast.'}</span>
         </div>
-        <span className="rounded-full bg-white px-3 py-2 font-medium text-slate-700">
-          {resultCount} {resultCount === 1 ? 'spot' : 'spots'}
-        </span>
+        <div className="inline-flex items-center gap-3">
+          {hasActiveFilters && (
+            <button
+              className="text-slate-500 underline underline-offset-4 transition-colors hover:text-slate-700"
+              onClick={clearFilters}
+              type="button"
+            >
+              Clear all
+            </button>
+          )}
+          <span className="rounded-full bg-white px-3 py-2 font-medium text-slate-700">
+            {resultCount} {resultCount === 1 ? 'spot' : 'spots'}
+          </span>
+        </div>
       </div>
     </div>
   );
