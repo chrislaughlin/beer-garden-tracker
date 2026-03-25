@@ -6,7 +6,6 @@ export const addVenueSchema = z.object({
   lng: z.number(),
   address: z.string().max(200).optional(),
   description: z.string().max(500).optional(),
-  region: z.literal('belfast'),
   hasEveningSun: z.boolean().optional(),
   tags: z.array(z.string()).max(8)
 });

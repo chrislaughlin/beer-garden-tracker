@@ -33,7 +33,7 @@ export interface BeerGarden {
   lng: number;
   address?: string;
   description?: string;
-  region: 'belfast';
+  region?: string | null;
   source: 'user' | 'seed' | 'admin';
   hasEveningSun?: boolean;
   status: VenueStatus;

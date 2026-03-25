@@ -23,7 +23,7 @@ export default async function AdminVenueDetailPage({ params }: { params: Promise
       <AdminActionBar />
       <div className="grid gap-5 lg:grid-cols-[0.95fr_1.05fr]">
         <Card className="space-y-4 p-5"><h2 className="text-xl font-bold">Edit venue details</h2><Input defaultValue={venue.name} /><Input defaultValue={venue.address} /><Textarea defaultValue={venue.description} /><div className="grid grid-cols-2 gap-3"><Input defaultValue={String(venue.lat)} /><Input defaultValue={String(venue.lng)} /></div></Card>
-        <Card className="space-y-4 p-5"><h2 className="text-xl font-bold">Duplicate merge helper</h2><div className="grid gap-3 md:grid-cols-2"><div className="rounded-3xl bg-muted p-4"><p className="font-semibold">Primary record</p><p className="mt-2 text-sm text-slate-600">{venue.name}</p></div><div className="rounded-3xl bg-amber-50 p-4"><p className="font-semibold">Potential duplicate</p><p className="mt-2 text-sm text-slate-600">Harbour Hop Belfast</p></div></div><div className="h-56 rounded-[2rem] bg-[linear-gradient(135deg,rgba(77,124,15,0.15),rgba(245,158,11,0.15))]" /></Card>
+        <Card className="space-y-4 p-5"><h2 className="text-xl font-bold">Duplicate merge helper</h2><div className="grid gap-3 md:grid-cols-2"><div className="rounded-3xl bg-muted p-4"><p className="font-semibold">Primary record</p><p className="mt-2 text-sm text-slate-600">{venue.name}</p></div><div className="rounded-3xl bg-amber-50 p-4"><p className="font-semibold">Potential duplicate</p><p className="mt-2 text-sm text-slate-600">Harbour Hop</p></div></div><div className="h-56 rounded-[2rem] bg-[linear-gradient(135deg,rgba(77,124,15,0.15),rgba(245,158,11,0.15))]" /></Card>
       </div>
     </div>
   );

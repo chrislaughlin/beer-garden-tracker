@@ -63,8 +63,7 @@ on public.beer_gardens
 for insert
 to authenticated
 with check (
-  region = 'belfast'
-  and created_by_user_id = auth.uid()
+  created_by_user_id = auth.uid()
 );
 
 drop policy if exists "beer_gardens_update_admin_only" on public.beer_gardens;
@@ -73,7 +72,7 @@ on public.beer_gardens
 for update
 to authenticated
 using (public.is_admin())
-with check (public.is_admin() and region = 'belfast');
+with check (public.is_admin());
 
 drop policy if exists "beer_gardens_delete_admin_only" on public.beer_gardens;
 create policy "beer_gardens_delete_admin_only"

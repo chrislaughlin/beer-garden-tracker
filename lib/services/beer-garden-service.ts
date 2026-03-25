@@ -13,7 +13,7 @@ type BeerGardenRow = {
   lng: number;
   address: string | null;
   description: string | null;
-  region: 'belfast';
+  region: string | null;
   source: 'user' | 'seed' | 'admin';
   has_evening_sun: boolean | null;
   status: BeerGarden['status'];
@@ -94,6 +94,31 @@ function getDistanceMeters(fromLat: number, fromLng: number, toLat: number, toLn
   return 2 * earthRadiusMeters * Math.asin(Math.sqrt(haversine));
 }
 
+function getCentroid(rows: BeerGardenRow[]) {
+  if (!rows.length) {
+    return undefined;
+  }
+
+  const totals = rows.reduce(
+    (acc, row) => {
+      acc.lat += row.lat;
+      acc.lng += row.lng;
+      acc.count += 1;
+      return acc;
+    },
+    { lat: 0, lng: 0, count: 0 }
+  );
+
+  if (!totals.count) {
+    return undefined;
+  }
+
+  return {
+    lat: totals.lat / totals.count,
+    lng: totals.lng / totals.count
+  };
+}
+
 async function getPreviewVenueIds() {
   return new Set(await getSubmissionPreviewIds());
 }
@@ -103,7 +128,6 @@ async function listBeerGardenRows() {
   const { data, error } = await supabase
     .from('beer_gardens')
     .select('*')
-    .eq('region', 'belfast')
     .order('name');
 
   if (error) {
@@ -356,12 +380,12 @@ export const beerGardenService = {
     const tags = uniqueStrings(options.tags ?? []);
     const ratingMin = options.ratingMin;
     const ratingMax = options.ratingMax;
-    const origin = options.origin ?? BELFAST_CENTER;
 
     const filteredRows = applyEveningSun(
       applySearch(rows, options.query),
       options.hasEveningSun
     );
+    const origin = options.origin ?? getCentroid(filteredRows) ?? BELFAST_CENTER;
     const distanceById = new Map<string, number>(
       filteredRows.map((row) => [row.id, getDistanceMeters(origin.lat, origin.lng, row.lat, row.lng)])
     );
@@ -424,7 +448,7 @@ export const beerGardenService = {
 
   async listForAdmin(status?: string) {
     const supabase = await getPublicServerClient();
-    let query = supabase.from('beer_gardens').select('*').eq('region', 'belfast').order('created_at', { ascending: false });
+    let query = supabase.from('beer_gardens').select('*').order('created_at', { ascending: false });
 
     if (status) {
       query = query.eq('status', status);

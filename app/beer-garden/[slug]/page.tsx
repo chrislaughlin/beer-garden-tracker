@@ -45,7 +45,7 @@ export default async function BeerGardenDetailPage({
           <Image src={photoUrl} alt={venue.name} fill className="object-cover" />
           <div className="absolute inset-0 bg-gradient-to-t from-slate-950/75 via-slate-900/20 to-transparent" />
           <div className="absolute inset-x-0 bottom-0 p-5 text-white">
-            <p className="text-sm uppercase tracking-[0.24em] text-amber-300">Belfast beer garden</p>
+            <p className="text-sm uppercase tracking-[0.24em] text-amber-300">Beer garden</p>
             <div className="mt-2 flex items-end justify-between gap-4"><div><h1 className="text-3xl font-bold">{venue.name}</h1><p className="mt-2 max-w-2xl text-sm text-white/80">{venue.description}</p></div><div className="rounded-3xl bg-white/15 px-4 py-3 text-right backdrop-blur"><div className="text-2xl font-bold">{venue.rating.toFixed(1)}</div><div className="text-xs text-white/80">{venue.reviewCount} reviews</div></div></div>
           </div>
         </div>

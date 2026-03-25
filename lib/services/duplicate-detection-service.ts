@@ -8,13 +8,12 @@ export const duplicateDetectionService = {
       return [];
     }
 
-    const supabase = await getPublicServerClient();
-    const { data, error } = await supabase
-      .from('beer_gardens')
-      .select('id, slug, name, address')
-      .eq('region', 'belfast')
-      .order('updated_at', { ascending: false })
-      .limit(12);
+  const supabase = await getPublicServerClient();
+  const { data, error } = await supabase
+    .from('beer_gardens')
+    .select('id, slug, name, address')
+    .order('updated_at', { ascending: false })
+    .limit(12);
 
     if (error) {
       throw error;

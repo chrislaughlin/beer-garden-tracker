@@ -51,7 +51,6 @@ export async function submitVenueAction(formData: FormData) {
     lng: Number(formData.get('lng')),
     address: getOptionalString(formData, 'address'),
     description: getOptionalString(formData, 'description'),
-    region: 'belfast',
     hasEveningSun: formData.get('hasEveningSun') === 'on',
     tags: formData.getAll('tags').map((value) => String(value))
   });
@@ -74,7 +73,6 @@ export async function submitVenueAction(formData: FormData) {
       lng: parsed.data.lng,
       address,
       description: parsed.data.description,
-      region: parsed.data.region,
       source: 'user',
       has_evening_sun: parsed.data.hasEveningSun ?? false,
       status: 'approved',

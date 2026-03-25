@@ -6,7 +6,7 @@ import { QueryProvider } from '@/components/providers/query-provider';
 
 export const metadata: Metadata = {
   title: 'Beer Garden Tracker',
-  description: 'Find nearby Belfast beer gardens, add missing spots, and help keep the map tidy.'
+  description: 'Find nearby beer gardens, add missing spots, and help keep the map tidy.'
 };
 
 export default function RootLayout({ children }: Readonly<{ children: ReactNode }>) {

@@ -9,7 +9,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       <div className="mb-6 flex items-center justify-between rounded-full bg-white/75 px-4 py-3 shadow-soft backdrop-blur">
         <Link href="/" className="rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary">
           <p className="text-xs uppercase tracking-[0.24em] text-secondary">Beer Garden Tracker</p>
-          <h1 className="text-lg font-bold">Belfast sunny pint finder</h1>
+          <h1 className="text-lg font-bold">Sunny pint finder</h1>
         </Link>
       </div>
       {children}

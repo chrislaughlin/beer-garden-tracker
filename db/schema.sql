@@ -33,7 +33,7 @@ create table if not exists beer_gardens (
   location geography(point, 4326) generated always as (st_setsrid(st_makepoint(lng, lat), 4326)::geography) stored,
   address text,
   description text,
-  region text not null default 'belfast',
+  region text,
   source text not null default 'user',
   has_evening_sun boolean,
   status venue_status not null default 'pending',
@@ -97,8 +97,7 @@ language sql
 as $$
   select bg.id, bg.name, bg.slug, bg.status, st_distance(bg.location, st_setsrid(st_makepoint(search_lng, search_lat), 4326)::geography) as distance_m
   from beer_gardens bg
-  where bg.region = 'belfast'
-    and st_dwithin(bg.location, st_setsrid(st_makepoint(search_lng, search_lat), 4326)::geography, radius_m)
+  where st_dwithin(bg.location, st_setsrid(st_makepoint(search_lng, search_lat), 4326)::geography, radius_m)
   order by bg.location <-> st_setsrid(st_makepoint(search_lng, search_lat), 4326)::geography;
 $$;
 
@@ -111,8 +110,7 @@ as $$
          similarity(lower(bg.name), lower(candidate_name)) as similarity_score,
          st_distance(bg.location, st_setsrid(st_makepoint(candidate_lng, candidate_lat), 4326)::geography) as distance_m
   from beer_gardens bg
-  where bg.region = 'belfast'
-    and similarity(lower(bg.name), lower(candidate_name)) > 0.25
+  where similarity(lower(bg.name), lower(candidate_name)) > 0.25
     and st_dwithin(bg.location, st_setsrid(st_makepoint(candidate_lng, candidate_lat), 4326)::geography, 250)
   order by similarity_score desc, distance_m asc;
 $$;

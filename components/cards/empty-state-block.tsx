@@ -11,7 +11,7 @@ type EmptyStateBlockProps = {
 
 export function EmptyStateBlock({
   title = 'No beer gardens added here yet',
-  description = 'Be the first to add one and help build the Belfast map properly.',
+  description = 'Be the first to add one and help build the map properly.',
   ctaLabel = 'Be the first to add one',
   ctaHref = '/add'
 }: EmptyStateBlockProps) {

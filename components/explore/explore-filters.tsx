@@ -140,7 +140,7 @@ export function ExploreFilters({ resultCount }: ExploreFiltersProps) {
     if (!navigator.geolocation) {
       setOrigin(null);
       setLocationStatus('fallback');
-      setLocationMessage('Location is unavailable on this device, so results are sorted from central Belfast.');
+      setLocationMessage('Location is unavailable on this device, so results are sorted from the center of nearby venues.');
 
       if (window.location.search.includes('lat=') || window.location.search.includes('lng=')) {
         replaceOriginInCurrentUrl(null);
@@ -173,7 +173,7 @@ export function ExploreFilters({ resultCount }: ExploreFiltersProps) {
       () => {
         setOrigin(null);
         setLocationStatus('fallback');
-        setLocationMessage('Location permission was unavailable, so results are sorted from central Belfast.');
+        setLocationMessage('Location permission was unavailable, so results are sorted from the center of nearby venues.');
 
         if (window.location.search.includes('lat=') || window.location.search.includes('lng=')) {
           replaceOriginInCurrentUrl(null);
@@ -208,7 +208,7 @@ export function ExploreFilters({ resultCount }: ExploreFiltersProps) {
       <div className="flex items-center gap-3 rounded-2xl border bg-muted px-4 py-3">
         <Search className="h-4 w-4 text-slate-500" />
         <Input
-          aria-label="Search Belfast venues"
+          aria-label="Search venues"
           className="h-auto border-0 bg-transparent px-0"
           onChange={(event) => setSearch(event.target.value)}
           placeholder="Search by venue or area"
@@ -261,7 +261,7 @@ export function ExploreFilters({ resultCount }: ExploreFiltersProps) {
           ) : (
             <LocateFixed className={cn('h-4 w-4', locationStatus === 'ready' ? 'text-secondary' : 'text-slate-400')} />
           )}
-          <span>{locationMessage ?? 'Results are sorted from central Belfast.'}</span>
+          <span>{locationMessage ?? 'Results are sorted from the center of nearby venues.'}</span>
         </div>
         <div className="inline-flex items-center gap-3">
           {hasActiveFilters && (
