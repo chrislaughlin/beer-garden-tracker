@@ -27,7 +27,8 @@ export default async function HomePage() {
             {[
               ...VENUE_TAG_SUGGESTIONS.map((tag) => ({
                 label: tag,
-                href: buildExploreHref({ tags: [tag] })
+                href: buildExploreHref({ tags: [tag] }),
+                showStar: false
               })),
               {
                 label: '4+',
