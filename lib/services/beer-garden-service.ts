@@ -354,6 +354,8 @@ export const beerGardenService = {
       getPreviewVenueIds()
     ]);
     const tags = uniqueStrings(options.tags ?? []);
+    const ratingMin = options.ratingMin;
+    const ratingMax = options.ratingMax;
     const origin = options.origin ?? BELFAST_CENTER;
 
     const filteredRows = applyEveningSun(
@@ -369,7 +371,25 @@ export const beerGardenService = {
       distanceById,
       previewVenueIds
     );
-    return hydrated
+    const ratingFiltered = ratingMin !== undefined || ratingMax !== undefined
+      ? hydrated.filter((venue) => {
+        if (venue.reviewCount === 0) {
+          return false;
+        }
+
+        if (ratingMin !== undefined && venue.rating < ratingMin) {
+          return false;
+        }
+
+        if (ratingMax !== undefined && venue.rating > ratingMax) {
+          return false;
+        }
+
+        return true;
+      })
+      : hydrated;
+
+    return ratingFiltered
       .filter((venue) => tags.length === 0 || tags.every((tag) => venue.tags.includes(tag)))
       .sort((left, right) => left.distanceMeters - right.distanceMeters || right.rating - left.rating);
   },

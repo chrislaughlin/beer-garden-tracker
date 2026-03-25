@@ -26,6 +26,8 @@ export type ExploreSearchParams = {
   sun?: ParamValue;
   lat?: ParamValue;
   lng?: ParamValue;
+  rating_min?: ParamValue;
+  rating_max?: ParamValue;
 };
 
 export type DiscoverOrigin = {
@@ -38,6 +40,8 @@ export type ListNearbyOptions = {
   tags?: string[];
   hasEveningSun?: boolean;
   origin?: DiscoverOrigin;
+  ratingMin?: number;
+  ratingMax?: number;
 };
 
 function getFirstValue(value: ParamValue) {
@@ -59,6 +63,17 @@ function parseCoordinate(value: ParamValue) {
   return Number.isFinite(parsed) ? parsed : undefined;
 }
 
+function parseRating(value: ParamValue) {
+  const candidate = getFirstValue(value);
+
+  if (!candidate?.trim()) {
+    return undefined;
+  }
+
+  const parsed = Number(candidate);
+  return Number.isFinite(parsed) ? parsed : undefined;
+}
+
 function uniqueStrings(values: string[]) {
   return Array.from(new Set(values.map((value) => value.trim()).filter(Boolean)));
 }
@@ -69,12 +84,16 @@ export function parseExploreSearchParams(searchParams?: ExploreSearchParams): Re
   const hasEveningSun = getFirstValue(searchParams?.sun) === '1';
   const lat = parseCoordinate(searchParams?.lat);
   const lng = parseCoordinate(searchParams?.lng);
+  const ratingMin = parseRating(searchParams?.rating_min);
+  const ratingMax = parseRating(searchParams?.rating_max);
 
   return {
     query,
     tags,
     hasEveningSun,
-    origin: lat !== undefined && lng !== undefined ? { lat, lng } : undefined
+    origin: lat !== undefined && lng !== undefined ? { lat, lng } : undefined,
+    ratingMin,
+    ratingMax
   };
 }
 
@@ -82,6 +101,8 @@ export function buildExploreHref(options: ListNearbyOptions = {}) {
   const params = new URLSearchParams();
   const query = options.query?.trim();
   const tags = uniqueStrings(options.tags ?? []);
+  const ratingMin = options.ratingMin;
+  const ratingMax = options.ratingMax;
 
   if (query) {
     params.set('q', query);
@@ -93,6 +114,14 @@ export function buildExploreHref(options: ListNearbyOptions = {}) {
 
   if (options.hasEveningSun) {
     params.set('sun', '1');
+  }
+
+  if (ratingMin !== undefined && Number.isFinite(ratingMin)) {
+    params.set('rating_min', String(ratingMin));
+  }
+
+  if (ratingMax !== undefined && Number.isFinite(ratingMax)) {
+    params.set('rating_max', String(ratingMax));
   }
 
   if (options.origin) {

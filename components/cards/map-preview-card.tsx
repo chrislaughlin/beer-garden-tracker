@@ -14,9 +14,7 @@ export function MapPreviewCard({ venues }: MapPreviewCardProps) {
     <Card className="map-gradient p-5">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <p className="text-sm font-semibold uppercase tracking-[0.24em] text-secondary">Map preview</p>
-          <h3 className="mt-2 text-xl font-bold">Nearby beer gardens around central Belfast</h3>
-          <p className="mt-2 text-sm text-slate-700">Live venue pins now render here, with a no-key OpenStreetMap fallback if MapTiler is not configured.</p>
+          <p className="text-sm font-semibold uppercase tracking-[0.24em] text-secondary">Nearby beer gardens</p>
         </div>
         <div className="rounded-3xl bg-white/80 p-4"><MapPinned className="h-8 w-8 text-secondary" /></div>
       </div>

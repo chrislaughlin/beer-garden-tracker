@@ -11,7 +11,6 @@ export function AppShell({ children }: { children: ReactNode }) {
           <p className="text-xs uppercase tracking-[0.24em] text-secondary">Beer Garden Tracker</p>
           <h1 className="text-lg font-bold">Belfast sunny pint finder</h1>
         </Link>
-        <BadgePill />
       </div>
       {children}
       <Suspense fallback={<FooterNavFallback />}>
@@ -19,10 +18,6 @@ export function AppShell({ children }: { children: ReactNode }) {
       </Suspense>
     </div>
   );
-}
-
-function BadgePill() {
-  return <div className="rounded-full bg-accent px-3 py-2 text-xs font-semibold text-amber-900">Region: Belfast</div>;
 }
 
 function FooterNavFallback() {

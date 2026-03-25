@@ -33,15 +33,61 @@ function isValidCoordinate(value: number) {
 
 export function BeerGardenMap({
   markers = [],
-  center = BELFAST_CENTER,
+  center,
   zoom = DEFAULT_CITY_ZOOM,
   className,
   selectedMarkerId,
   fitToMarkers = true
 }: BeerGardenMapProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
+  const [resolvedCenter, setResolvedCenter] = useState<Coordinates>(center ?? BELFAST_CENTER);
+  const [userLocation, setUserLocation] = useState<Coordinates | null>(null);
   const [isReady, setIsReady] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const shouldHonorUserCenter = Boolean(userLocation && !center);
+  const shouldFitToMarkers = fitToMarkers && !shouldHonorUserCenter;
+
+  useEffect(() => {
+    setResolvedCenter(center ?? BELFAST_CENTER);
+    if (center) {
+      setUserLocation(null);
+    }
+  }, [center]);
+
+  useEffect(() => {
+    if (center) {
+      return;
+    }
+
+    if (!('geolocation' in navigator)) {
+      return;
+    }
+
+    let cancelled = false;
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        if (cancelled) {
+          return;
+        }
+        const coords = { lat: position.coords.latitude, lng: position.coords.longitude };
+        setResolvedCenter(coords);
+        setUserLocation(coords);
+      },
+      () => {
+        if (cancelled) {
+          return;
+        }
+        setResolvedCenter(BELFAST_CENTER);
+        setUserLocation(null);
+      },
+      { enableHighAccuracy: false, timeout: 5000 }
+    );
+
+    return () => {
+      cancelled = true;
+    };
+  }, [center]);
 
   useEffect(() => {
     let cancelled = false;
@@ -58,7 +104,7 @@ export function BeerGardenMap({
         const map = new maplibregl.Map({
           container: containerRef.current,
           style: getMapStyle(),
-          center: [center.lng, center.lat],
+          center: [resolvedCenter.lng, resolvedCenter.lat],
           zoom,
           attributionControl: false
         });
@@ -69,6 +115,16 @@ export function BeerGardenMap({
         map.dragRotate.disable();
         map.touchZoomRotate.disableRotation();
         map.scrollZoom.disable();
+
+        if (userLocation && isValidCoordinate(userLocation.lat) && isValidCoordinate(userLocation.lng)) {
+          const userMarkerElement = document.createElement('div');
+          userMarkerElement.className = 'beer-garden-user-marker';
+          userMarkerElement.setAttribute('aria-label', 'Your location');
+
+          new maplibregl.Marker({ element: userMarkerElement, anchor: 'center' })
+            .setLngLat([userLocation.lng, userLocation.lat])
+            .addTo(map);
+        }
 
         const validMarkers = markers.filter((marker) => isValidCoordinate(marker.lat) && isValidCoordinate(marker.lng));
         const bounds = new maplibregl.LngLatBounds();
@@ -89,9 +145,9 @@ export function BeerGardenMap({
           bounds.extend([marker.lng, marker.lat]);
         });
 
-        if (validMarkers.length > 1 && fitToMarkers) {
+        if (validMarkers.length > 1 && shouldFitToMarkers) {
           map.fitBounds(bounds, { padding: 48, maxZoom: 14, duration: 0 });
-        } else if (validMarkers.length) {
+        } else if (validMarkers.length && !shouldHonorUserCenter) {
           const focusMarker = validMarkers.find((marker) => marker.id === selectedMarkerId) ?? validMarkers[0];
           map.setCenter([focusMarker.lng, focusMarker.lat]);
           map.setZoom(zoom);
@@ -122,7 +178,7 @@ export function BeerGardenMap({
       cancelled = true;
       mapInstance?.remove();
     };
-  }, [center.lat, center.lng, fitToMarkers, markers, selectedMarkerId, zoom]);
+  }, [markers, resolvedCenter.lat, resolvedCenter.lng, selectedMarkerId, shouldFitToMarkers, shouldHonorUserCenter, userLocation, zoom]);
 
   return (
     <div className={cn('beer-garden-map relative overflow-hidden rounded-[inherit] bg-slate-100', className)}>

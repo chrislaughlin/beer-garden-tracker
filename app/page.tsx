@@ -1,44 +1,59 @@
 import Link from 'next/link';
+import { Star } from 'lucide-react';
 import { beerGardenService } from '@/lib/services/beer-garden-service';
 import { VenueCard } from '@/components/cards/venue-card';
 import { MapPreviewCard } from '@/components/cards/map-preview-card';
 import { EmptyStateBlock } from '@/components/cards/empty-state-block';
 import { Button } from '@/components/ui/button';
-import { buildExploreHref, HOME_QUICK_FILTER_TAGS } from '@/lib/discovery';
+import { buildExploreHref, VENUE_TAG_SUGGESTIONS } from '@/lib/discovery';
 
 export default async function HomePage() {
   const venues = await beerGardenService.listNearby();
   return (
     <div className="space-y-6">
-      <section className="rounded-[2rem] bg-slate-950 p-6 text-white shadow-soft">
-        <p className="text-sm uppercase tracking-[0.24em] text-amber-300">Sunny-day decisions</p>
-        <h2 className="mt-3 max-w-xl text-3xl font-bold leading-tight">Find nearby beer gardens in Belfast, check the light, and add the ones we’ve missed.</h2>
-        <p className="mt-3 max-w-2xl text-sm text-white/75">Built for quick dogfooding: geolocation-first, sparse-data friendly, and contribution-led from day one.</p>
-        <div className="mt-5 flex flex-wrap gap-3">
-          <Button asChild><Link href="/explore">Explore nearby</Link></Button>
-          <Button variant="ghost" asChild><Link href="/add">Know a good spot nearby?</Link></Button>
+      <section className="grid gap-6 lg:grid-cols-2">
+        <div className="rounded-[2rem] bg-slate-950 p-6 text-white shadow-soft">
+          <p className="text-sm uppercase tracking-[0.24em] text-amber-300">Sunny-day decisions</p>
+          <h2 className="mt-3 max-w-xl text-3xl font-bold leading-tight">Find nearby beer gardens in Belfast, check the light, and add the ones we’ve missed.</h2>
+          <p className="mt-3 max-w-2xl text-sm text-white/75">Built for quick dogfooding: geolocation-first, sparse-data friendly, and contribution-led from day one.</p>
+          <div className="mt-5 flex flex-wrap gap-3">
+            <Button asChild><Link href="/explore">Explore nearby</Link></Button>
+            <Button variant="ghost" asChild><Link href="/add">Know a good spot nearby?</Link></Button>
+          </div>
         </div>
-      </section>
-      <section className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
-        <MapPreviewCard venues={venues} />
         <div className="rounded-[2rem] bg-white/80 p-5 shadow-soft">
           <p className="text-sm font-semibold uppercase tracking-[0.24em] text-secondary">Quick filters</p>
           <div className="mt-4 flex flex-wrap gap-2">
-            {HOME_QUICK_FILTER_TAGS.map((filter) => (
+            {[
+              ...VENUE_TAG_SUGGESTIONS.map((tag) => ({
+                label: tag,
+                href: buildExploreHref({ tags: [tag] })
+              })),
+              {
+                label: '4+',
+                href: buildExploreHref({ ratingMin: 4 }),
+                showStar: true
+              },
+              {
+                label: '1',
+                href: buildExploreHref({ ratingMax: 1 }),
+                showStar: true
+              }
+            ].map((filter) => (
               <Link
-                key={filter}
-                className="rounded-full bg-muted px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-white"
-                href={buildExploreHref({ tags: [filter] })}
+                key={filter.label}
+                className="inline-flex items-center gap-1.5 rounded-full bg-muted px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-white"
+                href={filter.href}
               >
-                {filter}
+                {filter.showStar ? <Star className="h-4 w-4 fill-primary text-primary" /> : null}
+                {filter.label}
               </Link>
             ))}
           </div>
-          <div className="mt-6 grid gap-3 rounded-3xl bg-amber-50 p-4">
-            <div><p className="text-sm font-semibold text-amber-900">Sparse data handled gracefully</p><p className="mt-1 text-sm text-slate-700">New submissions can show instantly to the contributor while admins tidy public visibility.</p></div>
-            <div><p className="text-sm font-semibold text-amber-900">Add flow is first-class</p><p className="mt-1 text-sm text-slate-700">Map pin first, quick details, helpful tags, and a fast submit flow for filling the gaps.</p></div>
-          </div>
         </div>
+      </section>
+      <section>
+        <MapPreviewCard venues={venues} />
       </section>
       <section className="space-y-4">
         <div className="flex items-center justify-between">
