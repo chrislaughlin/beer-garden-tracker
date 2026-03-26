@@ -15,7 +15,6 @@ export default async function HomePage() {
         <div className="rounded-[2rem] bg-slate-950 p-6 text-white shadow-soft">
           <p className="text-sm uppercase tracking-[0.24em] text-amber-300">Sunny-day decisions</p>
           <h2 className="mt-3 max-w-xl text-3xl font-bold leading-tight">Find nearby beer gardens, check the light, and add the ones we’ve missed.</h2>
-          <p className="mt-3 max-w-2xl text-sm text-white/75">Built for quick dogfooding: geolocation-first, sparse-data friendly, and contribution-led from day one.</p>
           <div className="mt-5 flex flex-wrap gap-3">
             <Button asChild><Link href="/explore">Explore nearby</Link></Button>
             <Button variant="ghost" asChild><Link href="/add">Know a good spot nearby?</Link></Button>

@@ -19,8 +19,6 @@ export default async function AddBeerGardenPage({
     <div className="space-y-5">
       <section className="rounded-[2rem] bg-slate-950 p-6 text-white shadow-soft">
         <p className="text-sm uppercase tracking-[0.24em] text-amber-300">Add a beer garden</p>
-        <h1 className="mt-3 text-3xl font-bold">A quick mobile flow for filling in the gaps</h1>
-        <p className="mt-2 text-sm text-white/75">Anonymous submission, Turnstile-ready, with duplicate detection before the final tap.</p>
       </section>
       {feedback?.error ? <Card className="border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">{feedback.error}</Card> : null}
       {feedback?.success ? <Card className="border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-700">{feedback.success}</Card> : null}
@@ -48,7 +46,7 @@ export default async function AddBeerGardenPage({
                 ))}
               </div>
             </Step>
-            <Step number="4" title="Review and submit" icon={<CheckCircle2 className="h-5 w-5" />}>
+            <Step number="4" title="Submit" icon={<CheckCircle2 className="h-5 w-5" />}>
               <div className="mt-3 flex gap-3"><Button type="submit">Submit venue</Button></div>
             </Step>
           </Card>

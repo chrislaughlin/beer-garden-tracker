@@ -352,13 +352,10 @@ export function LocationPicker() {
           onClick={() => setIsPickerOpen(true)}
           aria-label="Open the full-screen map picker"
         >
-          <span className="pointer-events-none absolute inset-x-4 bottom-4 block rounded-2xl bg-white/92 px-4 py-3 text-sm text-slate-700 shadow-lg">
+          <span className="pointer-events-none absolute inset-x-4 bottom-4 block rounded-2xl bg-white/50 px-4 py-3 text-sm text-slate-700 shadow-lg backdrop-blur">
             <span className="flex items-center gap-2 font-medium text-slate-900">
               <LocateFixed className="h-4 w-4 text-secondary" />
               {hasCoordinates ? 'Open the full-screen map to refine the pin.' : 'Open a full-screen map near your current location.'}
-            </span>
-            <span className="mt-1 block text-slate-600">
-              {hasCoordinates ? 'Pan, zoom, and tap again if the venue pin needs tightening up.' : 'We will try to center the map on your location first so you can move around to the bar.'}
             </span>
           </span>
         </button>
@@ -416,7 +413,7 @@ export function LocationPicker() {
                   <LocateFixed className="mr-2 h-4 w-4" />
                   Use my location
                 </Button>
-                <Button type="button" variant="ghost" size="sm" onClick={() => setIsPickerOpen(false)}>
+                <Button type="button" variant="outline" size="sm" onClick={() => setIsPickerOpen(false)}>
                   <X className="mr-2 h-4 w-4" />
                   Done
                 </Button>
@@ -438,14 +435,6 @@ export function LocationPicker() {
                     </div>
                   </div>
                 ) : null}
-                <div className="pointer-events-none absolute left-4 top-4 max-w-sm rounded-2xl bg-white/94 px-4 py-3 text-sm text-slate-700 shadow-lg">
-                  <p className="font-medium text-slate-950">
-                    {hasCoordinates ? 'Tap elsewhere or drag the pin to refine the venue.' : 'We are centering this on your current location so you can pan to the bar.'}
-                  </p>
-                  <p className="mt-1 text-slate-600">
-                    {isLocating ? 'Finding your current location…' : locationErrorMessage ?? 'Move the map around, then tap the venue to place the pin.'}
-                  </p>
-                </div>
                 <div className="pointer-events-none absolute inset-x-4 bottom-4">
                   <div className="rounded-2xl bg-slate-950/82 px-4 py-3 text-sm text-white shadow-xl backdrop-blur">
                     <p className="font-medium">{hasCoordinates ? 'Venue pin selected.' : 'No venue pin selected yet.'}</p>
