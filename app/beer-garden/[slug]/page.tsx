@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { Clock3, MapPin, Star, SunMedium, Camera, MessageSquareWarning } from 'lucide-react';
+import { Clock3, MapPin, Star, SunMedium } from 'lucide-react';
 import { BeerGardenMap } from '@/components/maps/beer-garden-map';
 import { beerGardenService } from '@/lib/services/beer-garden-service';
 import { DEFAULT_DETAIL_ZOOM } from '@/lib/maps';
@@ -9,7 +9,6 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { ReviewCard } from '@/components/cards/review-card';
-import { PhotoGrid } from '@/components/cards/photo-grid';
 
 export default async function BeerGardenDetailPage({
   params,
@@ -45,18 +44,19 @@ export default async function BeerGardenDetailPage({
       ) : null}
       <section className="overflow-hidden rounded-[2rem] bg-white shadow-soft">
         <div
-          className="relative h-40 w-full"
+          className="relative w-full"
           style={{
+            minHeight: '240px',
             backgroundImage: `radial-gradient(circle at 20% 25%, ${glowPrimary}, transparent 45%), radial-gradient(circle at 80% 10%, ${glowSecondary}, transparent 35%), linear-gradient(135deg, ${gradientFrom}, ${gradientTo})`
           }}
         >
           <div className="absolute inset-0 bg-gradient-to-br from-slate-900/25 via-slate-950/35 to-slate-950/55 backdrop-blur-[1px]" />
-          <div className="absolute inset-x-0 bottom-0 p-5 text-white drop-shadow-[0_4px_18px_rgba(0,0,0,0.35)]">
+          <div className="relative z-10 flex h-full flex-col justify-end gap-3 p-6 text-white drop-shadow-[0_4px_18px_rgba(0,0,0,0.35)] sm:p-7">
             <p className="text-sm uppercase tracking-[0.24em] text-amber-300">Beer garden</p>
-            <div className="mt-2 flex items-end justify-between gap-4">
-              <div>
-                <h1 className="text-3xl font-bold">{venue.name}</h1>
-                <p className="mt-2 max-w-2xl text-sm text-white/85">{venue.description}</p>
+            <div className="flex items-start justify-between gap-4">
+              <div className="space-y-2">
+                <h1 className="text-3xl font-bold leading-tight">{venue.name}</h1>
+                <p className="max-w-2xl text-sm text-white/85">{venue.description}</p>
               </div>
               <div className="rounded-3xl bg-white/15 px-4 py-3 text-right backdrop-blur-sm">
                 <div className="text-2xl font-bold">{venue.rating.toFixed(1)}</div>
@@ -78,16 +78,6 @@ export default async function BeerGardenDetailPage({
             <div className="flex flex-wrap gap-2">{venue.tags.map((tag) => <Badge key={tag} className="bg-muted text-slate-700">{tag}</Badge>)}</div>
             <div className="mt-4 grid gap-3 text-sm text-slate-700"><div className="flex items-center gap-2"><MapPin className="h-4 w-4 text-secondary" />{venue.address}</div><div className="flex items-center gap-2"><Star className="h-4 w-4 text-primary" />{venue.reviewCount} reviews and counting</div><div className="flex items-center gap-2"><SunMedium className="h-4 w-4 text-primary" />{venue.hasEveningSun ? 'Usually gets evening sun' : 'Better earlier in the day'}</div></div>
           </Card>
-          <Card className="p-5">
-            <h2 className="text-xl font-bold">Photo gallery</h2>
-            <div className="mt-4"><PhotoGrid photos={venue.photos} /></div>
-          </Card>
-          <Card className="p-5">
-            <div className="flex items-center justify-between"><h2 className="text-xl font-bold">Reviews</h2><Button variant="outline" asChild><Link href={`/review/${venue.id}`}>Add review</Link></Button></div>
-            <div className="mt-4 space-y-3">{venue.reviews.map((review) => <ReviewCard key={review.id} review={review} />)}</div>
-          </Card>
-        </div>
-        <div className="space-y-6">
           {sunset ? (
             <Card className="bg-slate-950 p-5 text-white">
               <p className="text-sm uppercase tracking-[0.24em] text-amber-300">Sunset guide</p>
@@ -100,6 +90,7 @@ export default async function BeerGardenDetailPage({
             <h2 className="text-xl font-bold">Map snippet</h2>
             <BeerGardenMap
               className="mt-4 h-52 rounded-[2rem] border border-white/60"
+              center={{ lat: venue.lat, lng: venue.lng }}
               markers={[{
                 id: venue.id,
                 name: venue.name,
@@ -114,8 +105,14 @@ export default async function BeerGardenDetailPage({
             {venue.address ? <p className="mt-3 text-sm text-slate-700">{venue.address}</p> : null}
           </Card>
           <Card className="p-5">
+            <div className="flex items-center justify-between"><h2 className="text-xl font-bold">Reviews</h2><Button variant="outline" asChild><Link href={`/review/${venue.id}`}>Add review</Link></Button></div>
+            <div className="mt-4 space-y-3">{venue.reviews.map((review) => <ReviewCard key={review.id} review={review} />)}</div>
+          </Card>
+        </div>
+        <div className="space-y-6">
+          <Card className="p-5">
             <h2 className="text-xl font-bold">Quick actions</h2>
-            <div className="mt-4 grid gap-3"><Button asChild><Link href={`/review/${venue.id}`}>Add review</Link></Button><Button variant="outline"><Camera className="mr-2 h-4 w-4" />Add photo</Button><Button variant="ghost"><MessageSquareWarning className="mr-2 h-4 w-4" />Report issue</Button></div>
+            <div className="mt-4 grid gap-3"><Button asChild><Link href={`/review/${venue.id}`}>Add review</Link></Button></div>
           </Card>
         </div>
       </div>
