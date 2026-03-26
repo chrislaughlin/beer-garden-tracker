@@ -13,6 +13,17 @@ export function AppShell({ children }: { children: ReactNode }) {
         </Link>
       </div>
       {children}
+      <div className="mt-10 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 shadow-soft">
+        <p className="font-medium">Enjoying Sunny Pint Finder? Support the project and keep the pints flowing.</p>
+        <a
+          href="https://buymeacoffee.com/chrislaughlin"
+          target="_blank"
+          rel="noreferrer"
+          className="inline-flex items-center gap-2 rounded-full bg-amber-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-amber-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-700"
+        >
+          ☕ Buy me a coffee
+        </a>
+      </div>
       <Suspense fallback={<FooterNavFallback />}>
         <FooterNav />
       </Suspense>
