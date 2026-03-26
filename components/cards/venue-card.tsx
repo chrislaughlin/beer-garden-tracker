@@ -1,21 +1,62 @@
 import Link from 'next/link';
-import Image from 'next/image';
 import { MapPin, Star, SunMedium, Clock3 } from 'lucide-react';
 import { BeerGarden } from '@/lib/types';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { formatDistanceKm } from '@/lib/utils';
 import { getSunsetSummary } from '@/lib/services/sunset-service';
-import { getFallbackPhoto } from '@/lib/data/fallback-photos';
+
+function buildRandomGradient() {
+  const palettes = [
+    {
+      linear: ['hsl(212 38% 26%)', 'hsl(211 34% 40%)', 'hsl(36 33% 80%)'],
+      blobs: ['hsla(204, 33%, 72%, 0.25)', 'hsla(220, 26%, 22%, 0.22)'],
+    },
+    {
+      linear: ['hsl(14 51% 55%)', 'hsl(24 63% 70%)', 'hsl(165 36% 78%)'],
+      blobs: ['hsla(20, 60%, 68%, 0.3)', 'hsla(160, 28%, 72%, 0.26)'],
+    },
+    {
+      linear: ['hsl(195 30% 30%)', 'hsl(198 32% 48%)', 'hsl(34 45% 78%)'],
+      blobs: ['hsla(200, 25%, 70%, 0.25)', 'hsla(30, 55%, 78%, 0.28)'],
+    },
+    {
+      linear: ['hsl(16 60% 70%)', 'hsl(42 65% 82%)', 'hsl(106 30% 78%)'],
+      blobs: ['hsla(32, 60%, 78%, 0.3)', 'hsla(105, 30%, 75%, 0.25)'],
+    },
+  ];
+
+  const palette = palettes[Math.floor(Math.random() * palettes.length)];
+  const [c1, c2, c3] = palette.linear;
+  const [blob1, blob2] = palette.blobs;
+
+  const x1 = 20 + Math.random() * 30;
+  const y1 = 15 + Math.random() * 25;
+  const x2 = 60 + Math.random() * 25;
+  const y2 = 55 + Math.random() * 35;
+
+  const linear = `linear-gradient(140deg, ${c1} 0%, ${c2} 55%, ${c3} 100%)`;
+  const softBlob1 = `radial-gradient(60% 80% at ${x1}% ${y1}%, ${blob1}, transparent 60%)`;
+  const softBlob2 = `radial-gradient(70% 70% at ${x2}% ${y2}%, ${blob2}, transparent 65%)`;
+
+  return `${softBlob1}, ${softBlob2}, ${linear}`;
+}
 
 export function VenueCard({ venue }: { venue: BeerGarden }) {
   const sunset = getSunsetSummary(venue.sunsetTime);
-  const photoUrl = venue.photos[0]?.url ?? getFallbackPhoto(venue.slug);
+  const gradient = buildRandomGradient();
   return (
     <Link href={`/beer-garden/${venue.slug}`}>
       <Card className="overflow-hidden">
-        <div className="relative h-44 w-full">
-          <Image src={photoUrl} alt={venue.name} fill className="object-cover" />
+        <div
+          className="relative w-full"
+          style={{
+            height: 'calc(11rem / 3)',
+            backgroundImage: gradient,
+            backgroundRepeat: 'no-repeat',
+            backgroundSize: '140% 140%',
+          }}
+        >
           <div className="absolute inset-x-0 top-0 flex justify-between p-3">
             <Badge className="bg-white/85 text-slate-900">{sunset.label}</Badge>
             <Badge className="bg-slate-950/75 text-white">{venue.status}</Badge>
