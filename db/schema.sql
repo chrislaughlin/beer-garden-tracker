@@ -52,7 +52,7 @@ create table if not exists reviews (
   rating int not null check (rating between 1 and 5),
   text text not null,
   sunny_when_visited boolean,
-  status moderation_status not null default 'pending',
+  status moderation_status not null default 'approved',
   created_at timestamptz not null default now()
 );
 

@@ -92,6 +92,25 @@ using (
   or public.is_admin()
 );
 
+-- Allow anonymous users to submit auto-approved reviews on approved venues
+drop policy if exists "reviews_insert_anon_pending" on public.reviews;
+drop policy if exists "reviews_insert_anon_approved" on public.reviews;
+drop policy if exists "reviews_insert_anon_autoapproved" on public.reviews;
+create policy "reviews_insert_anon_autoapproved"
+on public.reviews
+for insert
+to anon
+with check (
+  user_id is null
+  and status = 'approved'
+  and exists (
+    select 1
+    from public.beer_gardens bg
+    where bg.id = reviews.beer_garden_id
+      and bg.status = 'approved'
+  )
+);
+
 drop policy if exists "reviews_insert_authenticated" on public.reviews;
 create policy "reviews_insert_authenticated"
 on public.reviews

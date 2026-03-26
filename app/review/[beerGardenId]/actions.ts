@@ -47,7 +47,7 @@ export async function submitReviewAction(formData: FormData) {
     rating: parsed.data.rating,
     text: parsed.data.text,
     sunny_when_visited: parsed.data.sunnyWhenVisited ?? false,
-    status: 'pending'
+    status: 'approved'
   });
 
   if (error) {

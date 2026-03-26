@@ -42,7 +42,7 @@ from (
     ('sunset-yard-cathedral-quarter', null, 5, 'Great golden-hour pint spot with plenty of room even after work.', true, 'approved', '2026-03-22T18:10:00Z'),
     ('sunset-yard-cathedral-quarter', null, 4, 'Cosy and reliable, especially if you get there before the rush.', true, 'approved', '2026-03-21T17:05:00Z'),
     ('harbour-hops-titanic-quarter', null, 4, 'Big open deck and good atmosphere, but it gets windy.', false, 'approved', '2026-03-22T16:25:00Z'),
-    ('botanic-terrace-house', null, 4, 'Quiet little terrace tucked away from the main road.', true, 'pending', '2026-03-22T13:30:00Z')
+    ('botanic-terrace-house', null, 4, 'Quiet little terrace tucked away from the main road.', true, 'approved', '2026-03-22T13:30:00Z')
 ) as seed(slug, user_id, rating, text, sunny_when_visited, status, created_at)
 join beer_gardens bg on bg.slug = seed.slug
 where not exists (
