@@ -204,7 +204,7 @@ export function ExploreFilters({ resultCount }: ExploreFiltersProps) {
   }
 
   return (
-    <div className="sticky top-4 z-10 rounded-[2rem] bg-white/90 p-4 shadow-soft backdrop-blur">
+    <div className="rounded-[2rem] bg-white/90 p-4 shadow-soft">
       <div className="flex items-center gap-3 rounded-2xl border bg-muted px-4 py-3">
         <Search className="h-4 w-4 text-slate-500" />
         <Input
