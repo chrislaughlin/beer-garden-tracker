@@ -124,7 +124,7 @@ async function getPreviewVenueIds() {
 }
 
 async function listBeerGardenRows() {
-  const supabase = getServiceRoleClient();
+  const supabase = await getPublicServerClient();
   const { data, error } = await supabase
     .from('beer_gardens')
     .select('*')
@@ -138,7 +138,7 @@ async function listBeerGardenRows() {
 }
 
 async function getBeerGardenRowBySlug(slug: string) {
-  const supabase = getServiceRoleClient();
+  const supabase = await getPublicServerClient();
   const { data, error } = await supabase
     .from('beer_gardens')
     .select('*')
@@ -153,7 +153,7 @@ async function getBeerGardenRowBySlug(slug: string) {
 }
 
 async function getBeerGardenRowById(id: string) {
-  const supabase = getServiceRoleClient();
+  const supabase = await getPublicServerClient();
   const { data, error } = await supabase
     .from('beer_gardens')
     .select('*')
@@ -241,7 +241,6 @@ async function hydrateVenues(
   }
 
   const publicClient = await getPublicServerClient();
-  const serviceRoleClient = getServiceRoleClient();
   const venueIds = rows.map((row) => row.id);
   const previewIds = venueIds.filter((venueId) => previewVenueIds.has(venueId));
 
@@ -252,8 +251,7 @@ async function hydrateVenues(
     { data: previewReviewRows, error: previewReviewError },
     { data: previewPhotoRows, error: previewPhotoError }
   ] = await Promise.all([
-    // Venue rows are intentionally fetched with the service role so pending venues stay visible in the dogfood app.
-    serviceRoleClient.from('venue_tags').select('beer_garden_id, tag').in('beer_garden_id', venueIds),
+    publicClient.from('venue_tags').select('beer_garden_id, tag').in('beer_garden_id', venueIds),
     publicClient
       .from('reviews')
       .select('id, beer_garden_id, user_id, rating, text, sunny_when_visited, status, created_at')
@@ -265,14 +263,14 @@ async function hydrateVenues(
       .in('beer_garden_id', venueIds)
       .order('created_at', { ascending: false }),
     previewIds.length
-      ? serviceRoleClient
+      ? publicClient
         .from('reviews')
         .select('id, beer_garden_id, user_id, rating, text, sunny_when_visited, status, created_at')
         .in('beer_garden_id', previewIds)
         .order('created_at', { ascending: false })
       : Promise.resolve({ data: [] as ReviewRow[], error: null }),
     previewIds.length
-      ? serviceRoleClient
+      ? publicClient
         .from('photos')
         .select('id, beer_garden_id, review_id, storage_path, uploaded_by_user_id, moderation_status, created_at')
         .in('beer_garden_id', previewIds)

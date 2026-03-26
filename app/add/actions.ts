@@ -3,7 +3,7 @@
 import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
 import { reverseGeocodeCoordinates } from '@/lib/services/geocoding-service';
-import { getServiceRoleClient } from '@/lib/supabase';
+import { getPublicServerClient } from '@/lib/supabase';
 import { slugify } from '@/lib/utils';
 import { addVenueSchema } from '@/lib/validation';
 
@@ -23,7 +23,7 @@ function getOptionalString(formData: FormData, key: string) {
 }
 
 async function resolveUniqueSlug(baseSlug: string) {
-  const supabase = getServiceRoleClient();
+  const supabase = await getPublicServerClient();
   const { data, error } = await supabase.from('beer_gardens').select('slug').like('slug', `${baseSlug}%`);
 
   if (error) {
@@ -59,7 +59,7 @@ export async function submitVenueAction(formData: FormData) {
     redirect(buildRedirect('/add', { error: parsed.error.issues[0]?.message ?? 'Check the form and try again.' }));
   }
 
-  const supabase = getServiceRoleClient();
+  const supabase = await getPublicServerClient();
   const baseSlug = slugify(parsed.data.name) || 'beer-garden';
   const slug = await resolveUniqueSlug(baseSlug);
   const address = parsed.data.address ?? await reverseGeocodeCoordinates(parsed.data.lat, parsed.data.lng);
@@ -75,7 +75,7 @@ export async function submitVenueAction(formData: FormData) {
       description: parsed.data.description,
       source: 'user',
       has_evening_sun: parsed.data.hasEveningSun ?? false,
-      status: 'approved',
+      status: 'pending',
       confidence_score: 0.6,
       created_by_user_id: null
     })

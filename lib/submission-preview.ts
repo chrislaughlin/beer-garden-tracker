@@ -13,7 +13,7 @@ type SubmissionPreviewPayload = {
 };
 
 function getPreviewSecret() {
-  return process.env.SUPABASE_SERVICE_ROLE_KEY;
+  return process.env.PREVIEW_COOKIE_SECRET ?? process.env.SUPABASE_SERVICE_ROLE_KEY;
 }
 
 function sign(value: string, secret: string) {

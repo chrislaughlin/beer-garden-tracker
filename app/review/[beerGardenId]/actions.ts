@@ -2,7 +2,7 @@
 
 import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
-import { getServiceRoleClient } from '@/lib/supabase';
+import { getPublicServerClient } from '@/lib/supabase';
 import { reviewSchema } from '@/lib/validation';
 
 function buildRedirect(path: string, params: Record<string, string>) {
@@ -30,7 +30,7 @@ export async function submitReviewAction(formData: FormData) {
     redirect(buildRedirect(redirectPath, { error: parsed.error.issues[0]?.message ?? 'Check the review form and try again.' }));
   }
 
-  const supabase = getServiceRoleClient();
+  const supabase = await getPublicServerClient();
   const { data: venue, error: venueError } = await supabase
     .from('beer_gardens')
     .select('id, slug')
