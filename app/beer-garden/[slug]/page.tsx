@@ -25,7 +25,11 @@ export default async function BeerGardenDetailPage({
   const venue = await beerGardenService.getBySlug(slug);
   if (!venue) notFound();
   const sunset = getSunsetSummary(venue.sunsetTime);
-  const photoUrl = venue.photos[0]?.url ?? getFallbackPhoto(venue.name);
+  const photoUrl = venue.photos[0]?.url ?? getFallbackPhoto({
+    name: venue.name,
+    description: venue.description,
+    tags: venue.tags
+  });
   const submissionMessage = feedback?.submitted === '1'
     ? venue.status === 'approved'
       ? 'Venue submitted and published.'
