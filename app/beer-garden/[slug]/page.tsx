@@ -30,6 +30,7 @@ export default async function BeerGardenDetailPage({
     description: venue.description,
     tags: venue.tags
   });
+  const isGeneratedHero = photoUrl.startsWith('/api/hero-image');
   const submissionMessage = feedback?.submitted === '1'
     ? venue.status === 'approved'
       ? 'Venue submitted and published.'
@@ -46,7 +47,7 @@ export default async function BeerGardenDetailPage({
       ) : null}
       <section className="overflow-hidden rounded-[2rem] bg-white shadow-soft">
         <div className="relative h-72 w-full">
-          <Image src={photoUrl} alt={venue.name} fill className="object-cover" />
+          <Image src={photoUrl} alt={venue.name} fill className="object-cover" unoptimized={isGeneratedHero} />
           <div className="absolute inset-0 bg-gradient-to-t from-slate-950/75 via-slate-900/20 to-transparent" />
           <div className="absolute inset-x-0 bottom-0 p-5 text-white">
             <p className="text-sm uppercase tracking-[0.24em] text-amber-300">Beer garden</p>

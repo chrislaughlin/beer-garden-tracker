@@ -15,11 +15,12 @@ export function VenueCard({ venue }: { venue: BeerGarden }) {
     description: venue.description,
     tags: venue.tags
   });
+  const isGeneratedHero = photoUrl.startsWith('/api/hero-image');
   return (
     <Link href={`/beer-garden/${venue.slug}`}>
       <Card className="overflow-hidden">
         <div className="relative h-44 w-full">
-          <Image src={photoUrl} alt={venue.name} fill className="object-cover" />
+          <Image src={photoUrl} alt={venue.name} fill className="object-cover" unoptimized={isGeneratedHero} />
           <div className="absolute inset-x-0 top-0 flex justify-between p-3">
             <Badge className="bg-white/85 text-slate-900">{sunset.label}</Badge>
             <Badge className="bg-slate-950/75 text-white">{venue.status}</Badge>
