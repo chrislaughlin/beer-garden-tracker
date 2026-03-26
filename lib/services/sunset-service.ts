@@ -94,6 +94,10 @@ export async function getSunsetSummary(
   const todayKey = nowZoned.toISODate();
   const tomorrowKey = nowZoned.plus({ days: 1 }).toISODate();
 
+  if (!todayKey) {
+    return null;
+  }
+
   const todayTimes = await fetchSunTimes(lat, lng, todayKey);
   if (!todayTimes) {
     return null;
@@ -104,7 +108,7 @@ export async function getSunsetSummary(
   const minutesLeft = Math.round(sunsetDate.diff(nowZoned, 'minutes').minutes);
 
   let minutesUntilNextSunrise: number | undefined;
-  if (minutesLeft <= 0) {
+  if (minutesLeft <= 0 && tomorrowKey) {
     const tomorrowTimes = await fetchSunTimes(lat, lng, tomorrowKey);
     if (tomorrowTimes?.sunrise) {
       const nextSunrise = DateTime.fromISO(tomorrowTimes.sunrise, { zone: 'utc' }).setZone(timeZone);
@@ -112,9 +116,16 @@ export async function getSunsetSummary(
     }
   }
 
+  const sunsetTime = sunsetDate.toISO();
+  const sunriseTime = sunriseDate.toISO();
+
+  if (!sunsetTime || !sunriseTime) {
+    return null;
+  }
+
   return {
-    sunsetTime: sunsetDate.toISO(),
-    sunriseTime: sunriseDate.toISO(),
+    sunsetTime,
+    sunriseTime,
     minutesLeft,
     minutesUntilNextSunrise,
     label: pickLabel(minutesLeft)
