@@ -60,5 +60,5 @@ export async function submitReviewAction(formData: FormData) {
   revalidatePath('/admin');
   revalidatePath('/admin/reviews');
 
-  redirect(buildRedirect(redirectPath, { success: 'Review submitted. It is now waiting for moderation.' }));
+  redirect(buildRedirect(`/beer-garden/${venue.slug}`, { review: 'submitted' }));
 }

@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 import { submitReviewAction } from '@/app/review/[beerGardenId]/actions';
+import { QuickTags } from '@/components/reviews/quick-tags';
 
 export default async function ReviewPage({
   params,
@@ -25,7 +26,11 @@ export default async function ReviewPage({
     <div className="mx-auto max-w-2xl space-y-5">
       <Card className="bg-slate-950 p-6 text-white">
         <p className="text-sm uppercase tracking-[0.24em] text-amber-300">Quick review</p>
-        <h1 className="mt-2 text-3xl font-bold">{venue.name}</h1>
+        <h1 className="mt-2 text-3xl font-bold">
+          <Link href={`/beer-garden/${venue.slug}`} className="underline decoration-amber-200/60 decoration-2 underline-offset-4 hover:text-amber-200">
+            {venue.name}
+          </Link>
+        </h1>
         <p className="mt-2 text-sm text-white/75">Fast, casual, and anonymous — more “how was it?” than “complete this survey”.</p>
       </Card>
       {feedback?.error ? <Card className="border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">{feedback.error}</Card> : null}
@@ -54,12 +59,8 @@ export default async function ReviewPage({
           </label>
           <div>
             <p className="text-sm font-semibold">Quick tags</p>
-            <div className="mt-3 flex flex-wrap gap-2">
-              {['Sunny spot', 'Dog friendly', 'Good atmosphere', 'Busy', 'Quiet', 'Food available', 'Covered seating'].map((tag) => (
-                <span key={tag} className="rounded-full bg-muted px-4 py-2 text-sm">{tag}</span>
-              ))}
-            </div>
-            <p className="mt-3 text-xs text-slate-500">Tags are still visual guidance only. Review text and rating are the fields currently written to Supabase.</p>
+            <QuickTags tags={['Sunny spot', 'Dog friendly', 'Good atmosphere', 'Busy', 'Quiet', 'Food available', 'Covered seating']} />
+            <p className="mt-3 text-xs text-slate-500">Tags are optional extras; rating and text remain required.</p>
           </div>
           <div className="flex gap-3">
             <Button type="submit">Submit review</Button>

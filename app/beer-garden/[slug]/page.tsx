@@ -60,7 +60,13 @@ export default async function BeerGardenDetailPage({
               </div>
               <div className="rounded-3xl bg-white/15 px-4 py-3 text-right backdrop-blur-sm">
                 <div className="text-2xl font-bold">{venue.rating.toFixed(1)}</div>
-                <div className="text-xs text-white/80">{venue.reviewCount} reviews</div>
+                {venue.reviewCount > 0 ? (
+                  <div className="text-xs text-white/80">{venue.reviewCount} reviews</div>
+                ) : (
+                  <Link href={`/review/${venue.id}`} className="text-xs font-semibold text-amber-200 underline decoration-amber-200/70 underline-offset-4">
+                    No reviews yet – add one
+                  </Link>
+                )}
               </div>
             </div>
           </div>
