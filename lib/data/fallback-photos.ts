@@ -1,26 +1,3 @@
-const FALLBACK_PHOTOS = [
-  'https://images.unsplash.com/photo-1442512595331-e89e73853f31?auto=format&fit=crop&w=1200&q=80',
-  'https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=1200&q=80',
-  'https://images.unsplash.com/photo-1467003909585-2f8a72700288?auto=format&fit=crop&w=1200&q=80',
-  'https://images.unsplash.com/photo-1497534446932-c925b458314e?auto=format&fit=crop&w=1200&q=80',
-  'https://images.unsplash.com/photo-1438557068880-c5f474830377?auto=format&fit=crop&w=1200&q=80',
-  'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=1200&q=80',
-  'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?auto=format&fit=crop&w=1200&q=80',
-  'https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&w=1200&q=80',
-  'https://images.unsplash.com/photo-1527169402691-feff5539e52c?auto=format&fit=crop&w=1200&q=80',
-  'https://images.unsplash.com/photo-1489515217757-5fd1be406fef?auto=format&fit=crop&w=1200&q=80',
-  'https://images.unsplash.com/photo-1470337458703-46ad1756a187?auto=format&fit=crop&w=1200&q=80',
-  'https://images.unsplash.com/photo-1469474968028-56623f02e42e?auto=format&fit=crop&w=1200&q=80',
-  'https://images.unsplash.com/photo-1505751172876-fa1923c5c528?auto=format&fit=crop&w=1200&q=80',
-  'https://images.unsplash.com/photo-1508214751196-bcfd4ca60f91?auto=format&fit=crop&w=1200&q=80',
-  'https://images.unsplash.com/photo-1506377247377-2a5b3b417ebb?auto=format&fit=crop&w=1200&q=80',
-  'https://images.unsplash.com/photo-1499028344343-cd173ffc68a9?auto=format&fit=crop&w=1200&q=80',
-  'https://images.unsplash.com/photo-1470246973918-29a93221c455?auto=format&fit=crop&w=1200&q=80',
-  'https://images.unsplash.com/photo-1501045661006-fcebe0257c3f?auto=format&fit=crop&w=1200&q=80',
-  'https://images.unsplash.com/photo-1454047637795-79e3325dfa0e?auto=format&fit=crop&w=1200&q=80',
-  'https://images.unsplash.com/photo-1468413253725-0d5181091126?auto=format&fit=crop&w=1200&q=80'
-];
-
 function hashString(value: string) {
   let hash = 0;
 
@@ -31,9 +8,88 @@ function hashString(value: string) {
   return hash;
 }
 
-export function getFallbackPhoto(slug: string) {
-  const index = FALLBACK_PHOTOS.length ? hashString(slug || 'fallback') % FALLBACK_PHOTOS.length : 0;
-  return FALLBACK_PHOTOS[index];
+function seededRandom(seed: number) {
+  let state = seed || 1;
+
+  return () => {
+    state = (state * 1664525 + 1013904223) >>> 0;
+    return state / 0x100000000;
+  };
 }
 
-export { FALLBACK_PHOTOS };
+function createFractalBranch(x: number, y: number, size: number, depth: number, angle: number, hue: number): string {
+  if (depth <= 0 || size < 6) {
+    return '';
+  }
+
+  const opacity = (0.12 + depth * 0.06).toFixed(2);
+  const radius = Math.max(size * 0.18, 2);
+  const nextSize = size * 0.64;
+  const offset = size * 0.38;
+  const branchA = createFractalBranch(
+    x + Math.cos(angle - 0.52) * offset,
+    y + Math.sin(angle - 0.52) * offset,
+    nextSize,
+    depth - 1,
+    angle - 0.56,
+    (hue + 22) % 360
+  );
+  const branchB = createFractalBranch(
+    x + Math.cos(angle + 0.52) * offset,
+    y + Math.sin(angle + 0.52) * offset,
+    nextSize,
+    depth - 1,
+    angle + 0.56,
+    (hue + 34) % 360
+  );
+
+  return `<g>
+    <rect x="${(x - size / 2).toFixed(2)}" y="${(y - size / 2).toFixed(2)}" width="${size.toFixed(2)}" height="${size.toFixed(2)}" rx="${radius.toFixed(2)}" transform="rotate(${(angle * 57.2958).toFixed(2)} ${x.toFixed(2)} ${y.toFixed(2)})" fill="hsla(${hue.toFixed(0)} 76% 62% / ${opacity})"/>
+    ${branchA}
+    ${branchB}
+  </g>`;
+}
+
+export function getFallbackPhoto(seedInput: string) {
+  const seed = hashString(seedInput || 'fallback');
+  const random = seededRandom(seed);
+  const baseHue = Math.floor(random() * 360);
+  const secondaryHue = (baseHue + 36 + Math.floor(random() * 72)) % 360;
+  const accentHue = (baseHue + 180 + Math.floor(random() * 60)) % 360;
+
+  const gradients = `<linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="hsl(${baseHue} 46% 18%)"/>
+      <stop offset="45%" stop-color="hsl(${secondaryHue} 54% 24%)"/>
+      <stop offset="100%" stop-color="hsl(${accentHue} 52% 16%)"/>
+    </linearGradient>`;
+
+  const fractalGroup = Array.from({ length: 3 }, (_, index) => {
+    const x = 180 + random() * 840;
+    const y = 40 + random() * 280;
+    const size = 80 + random() * 120;
+    const depth = 3 + (index % 2);
+    const angle = random() * Math.PI * 2;
+    const hue = (baseHue + index * 36 + random() * 40) % 360;
+
+    return createFractalBranch(x, y, size, depth, angle, hue);
+  }).join('');
+
+  const bubbles = Array.from({ length: 24 }, () => {
+    const x = (random() * 1200).toFixed(2);
+    const y = (random() * 360).toFixed(2);
+    const radius = (3 + random() * 18).toFixed(2);
+    const hue = ((baseHue + random() * 90) % 360).toFixed(0);
+    const alpha = (0.08 + random() * 0.16).toFixed(2);
+
+    return `<circle cx="${x}" cy="${y}" r="${radius}" fill="hsla(${hue} 88% 76% / ${alpha})"/>`;
+  }).join('');
+
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 360" role="img" aria-label="Generated hero pattern">
+    <defs>${gradients}</defs>
+    <rect width="1200" height="360" fill="url(#bg)"/>
+    ${fractalGroup}
+    ${bubbles}
+  </svg>`;
+
+  return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
+}
