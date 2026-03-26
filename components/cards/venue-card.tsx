@@ -10,7 +10,7 @@ import { getFallbackPhoto } from '@/lib/data/fallback-photos';
 
 export function VenueCard({ venue }: { venue: BeerGarden }) {
   const sunset = getSunsetSummary(venue.sunsetTime);
-  const photoUrl = venue.photos[0]?.url ?? getFallbackPhoto(venue.slug);
+  const photoUrl = venue.photos[0]?.url ?? getFallbackPhoto(venue.name);
   return (
     <Link href={`/beer-garden/${venue.slug}`}>
       <Card className="overflow-hidden">
