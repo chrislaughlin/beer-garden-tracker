@@ -123,7 +123,7 @@ async function getPreviewVenueIds() {
   return new Set(await getSubmissionPreviewIds());
 }
 
-async function listBeerGardenRows() {
+async function listBeerGardenRows(previewVenueIds = new Set<string>()) {
   const supabase = await getPublicServerClient();
   const { data, error } = await supabase
     .from('beer_gardens')
@@ -134,10 +134,29 @@ async function listBeerGardenRows() {
     throw error;
   }
 
-  return (data ?? []) as BeerGardenRow[];
+  let rows = (data ?? []) as BeerGardenRow[];
+
+  if (previewVenueIds.size) {
+    const service = getServiceRoleClient();
+    const { data: previewRows, error: previewError } = await service
+      .from('beer_gardens')
+      .select('*')
+      .in('id', Array.from(previewVenueIds));
+
+    if (previewError) {
+      throw previewError;
+    }
+
+    rows = uniqueBy(
+      [...rows, ...((previewRows ?? []) as BeerGardenRow[])],
+      (row) => row.id
+    );
+  }
+
+  return rows;
 }
 
-async function getBeerGardenRowBySlug(slug: string) {
+async function getBeerGardenRowBySlug(slug: string, previewVenueIds: Set<string>) {
   const supabase = await getPublicServerClient();
   const { data, error } = await supabase
     .from('beer_gardens')
@@ -149,10 +168,31 @@ async function getBeerGardenRowBySlug(slug: string) {
     throw error;
   }
 
-  return data as BeerGardenRow | null;
+  if (data) {
+    return data as BeerGardenRow;
+  }
+
+  if (previewVenueIds.size) {
+    const service = getServiceRoleClient();
+    const { data: previewRow, error: previewError } = await service
+      .from('beer_gardens')
+      .select('*')
+      .eq('slug', slug)
+      .maybeSingle();
+
+    if (previewError) {
+      throw previewError;
+    }
+
+    if (previewRow && previewVenueIds.has(previewRow.id)) {
+      return previewRow as BeerGardenRow;
+    }
+  }
+
+  return null;
 }
 
-async function getBeerGardenRowById(id: string) {
+async function getBeerGardenRowById(id: string, previewVenueIds: Set<string>) {
   const supabase = await getPublicServerClient();
   const { data, error } = await supabase
     .from('beer_gardens')
@@ -164,7 +204,28 @@ async function getBeerGardenRowById(id: string) {
     throw error;
   }
 
-  return data as BeerGardenRow | null;
+  if (data) {
+    return data as BeerGardenRow;
+  }
+
+  if (previewVenueIds.has(id)) {
+    const service = getServiceRoleClient();
+    const { data: previewRow, error: previewError } = await service
+      .from('beer_gardens')
+      .select('*')
+      .eq('id', id)
+      .maybeSingle();
+
+    if (previewError) {
+      throw previewError;
+    }
+
+    if (previewRow) {
+      return previewRow as BeerGardenRow;
+    }
+  }
+
+  return null;
 }
 
 async function resolvePhotoUrls(photos: PhotoRow[]) {
@@ -371,10 +432,8 @@ function applyEveningSun(rows: BeerGardenRow[], hasEveningSun?: boolean) {
 
 export const beerGardenService = {
   async listNearby(options: ListNearbyOptions = {}) {
-    const [rows, previewVenueIds] = await Promise.all([
-      listBeerGardenRows(),
-      getPreviewVenueIds()
-    ]);
+    const previewVenueIds = await getPreviewVenueIds();
+    const rows = await listBeerGardenRows(previewVenueIds);
     const tags = uniqueStrings(options.tags ?? []);
     const ratingMin = options.ratingMin;
     const ratingMax = options.ratingMax;
@@ -417,10 +476,8 @@ export const beerGardenService = {
   },
 
   async getBySlug(slug: string) {
-    const [row, previewVenueIds] = await Promise.all([
-      getBeerGardenRowBySlug(slug),
-      getPreviewVenueIds()
-    ]);
+    const previewVenueIds = await getPreviewVenueIds();
+    const row = await getBeerGardenRowBySlug(slug, previewVenueIds);
 
     if (!row) {
       return undefined;
@@ -431,10 +488,8 @@ export const beerGardenService = {
   },
 
   async getById(id: string) {
-    const [row, previewVenueIds] = await Promise.all([
-      getBeerGardenRowById(id),
-      getPreviewVenueIds()
-    ]);
+    const previewVenueIds = await getPreviewVenueIds();
+    const row = await getBeerGardenRowById(id, previewVenueIds);
 
     if (!row) {
       return undefined;

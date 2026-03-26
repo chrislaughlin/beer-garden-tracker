@@ -3,7 +3,8 @@
 import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
 import { reverseGeocodeCoordinates } from '@/lib/services/geocoding-service';
-import { getPublicServerClient } from '@/lib/supabase';
+import { appendSubmissionPreviewId } from '@/lib/submission-preview';
+import { getServiceRoleClient } from '@/lib/supabase';
 import { slugify } from '@/lib/utils';
 import { addVenueSchema } from '@/lib/validation';
 
@@ -23,7 +24,7 @@ function getOptionalString(formData: FormData, key: string) {
 }
 
 async function resolveUniqueSlug(baseSlug: string) {
-  const supabase = await getPublicServerClient();
+  const supabase = await getServiceRoleClient();
   const { data, error } = await supabase.from('beer_gardens').select('slug').like('slug', `${baseSlug}%`);
 
   if (error) {
@@ -59,7 +60,7 @@ export async function submitVenueAction(formData: FormData) {
     redirect(buildRedirect('/add', { error: parsed.error.issues[0]?.message ?? 'Check the form and try again.' }));
   }
 
-  const supabase = await getPublicServerClient();
+  const supabase = await getServiceRoleClient();
   const baseSlug = slugify(parsed.data.name) || 'beer-garden';
   const slug = await resolveUniqueSlug(baseSlug);
   const address = parsed.data.address ?? await reverseGeocodeCoordinates(parsed.data.lat, parsed.data.lng);
@@ -83,8 +84,12 @@ export async function submitVenueAction(formData: FormData) {
     .single();
 
   if (error || !venue) {
+    console.error('submitVenueAction insert error', error);
     redirect(buildRedirect('/add', { error: 'Supabase rejected that venue submission. Try again.' }));
   }
+
+  // allow the submitter to preview the pending venue
+  await appendSubmissionPreviewId(venue.id);
 
   if (parsed.data.tags.length > 0) {
     const { error: tagError } = await supabase.from('venue_tags').insert(
@@ -95,6 +100,7 @@ export async function submitVenueAction(formData: FormData) {
     );
 
     if (tagError) {
+      console.error('submitVenueAction tag insert error', tagError);
       redirect(buildRedirect('/add', { error: 'The venue was created, but tags could not be saved.' }));
     }
   }
