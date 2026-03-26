@@ -42,8 +42,8 @@ function buildRandomGradient() {
   return `${softBlob1}, ${softBlob2}, ${linear}`;
 }
 
-export function VenueCard({ venue }: { venue: BeerGarden }) {
-  const sunset = getSunsetSummary(venue.sunsetTime);
+export async function VenueCard({ venue }: { venue: BeerGarden }) {
+  const sunset = await getSunsetSummary(venue.lat, venue.lng);
   const gradient = buildRandomGradient();
   return (
     <Link href={`/beer-garden/${venue.slug}`}>
@@ -58,7 +58,7 @@ export function VenueCard({ venue }: { venue: BeerGarden }) {
           }}
         >
           <div className="absolute inset-x-0 top-0 flex justify-between p-3">
-            <Badge className="bg-white/85 text-slate-900">{sunset.label}</Badge>
+            {sunset ? <Badge className="bg-white/85 text-slate-900">{sunset.label}</Badge> : <span />}
             <Badge className="bg-slate-950/75 text-white">{venue.status}</Badge>
           </div>
         </div>
@@ -75,7 +75,9 @@ export function VenueCard({ venue }: { venue: BeerGarden }) {
           <div className="flex flex-wrap gap-2 text-sm text-slate-600">
             <span className="inline-flex items-center gap-1"><MapPin className="h-4 w-4" />{formatDistanceKm(venue.distanceMeters)}</span>
             <span className="inline-flex items-center gap-1"><Star className="h-4 w-4 fill-primary text-primary" />{venue.reviewCount} reviews</span>
-            <span className="inline-flex items-center gap-1"><Clock3 className="h-4 w-4" />{Math.max(sunset.minutesLeft, 0)} min to sunset</span>
+            {sunset ? (
+              <span className="inline-flex items-center gap-1"><Clock3 className="h-4 w-4" />{Math.max(sunset.minutesLeft, 0)} min to sunset</span>
+            ) : null}
           </div>
           <div className="flex flex-wrap gap-2">
             {venue.tags.slice(0, 3).map((tag) => <Badge key={tag} className="bg-muted text-slate-700">{tag}</Badge>)}

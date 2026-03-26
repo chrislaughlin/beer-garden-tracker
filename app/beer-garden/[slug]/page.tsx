@@ -24,7 +24,7 @@ export default async function BeerGardenDetailPage({
   const feedback = searchParams ? await searchParams : undefined;
   const venue = await beerGardenService.getBySlug(slug);
   if (!venue) notFound();
-  const sunset = getSunsetSummary(venue.sunsetTime);
+  const sunset = await getSunsetSummary(venue.lat, venue.lng);
   const photoUrl = venue.photos[0]?.url ?? getFallbackPhoto(venue.slug);
   const submissionMessage = feedback?.submitted === '1'
     ? venue.status === 'approved'
@@ -66,12 +66,14 @@ export default async function BeerGardenDetailPage({
           </Card>
         </div>
         <div className="space-y-6">
-          <Card className="bg-slate-950 p-5 text-white">
-            <p className="text-sm uppercase tracking-[0.24em] text-amber-300">Sunset guide</p>
-            <h2 className="mt-2 text-2xl font-bold">{sunset.label}</h2>
-            <p className="mt-2 text-sm text-white/75">A lightweight Open-Meteo-ready decision aid for quick “should we head now?” moments.</p>
-            <div className="mt-4 rounded-3xl bg-white/10 p-4"><div className="flex items-center gap-2 text-amber-300"><Clock3 className="h-4 w-4" />{Math.max(sunset.minutesLeft, 0)} minutes until sunset</div></div>
-          </Card>
+          {sunset ? (
+            <Card className="bg-slate-950 p-5 text-white">
+              <p className="text-sm uppercase tracking-[0.24em] text-amber-300">Sunset guide</p>
+              <h2 className="mt-2 text-2xl font-bold">{sunset.label}</h2>
+              <p className="mt-2 text-sm text-white/75">A lightweight Open-Meteo-ready decision aid for quick “should we head now?” moments.</p>
+              <div className="mt-4 rounded-3xl bg-white/10 p-4"><div className="flex items-center gap-2 text-amber-300"><Clock3 className="h-4 w-4" />{Math.max(sunset.minutesLeft, 0)} minutes until sunset</div></div>
+            </Card>
+          ) : null}
           <Card className="map-gradient p-5">
             <h2 className="text-xl font-bold">Map snippet</h2>
             <BeerGardenMap

@@ -47,7 +47,8 @@ export interface BeerGarden {
   reviewCount: number;
   photos: Photo[];
   reviews: Review[];
-  sunsetTime: string;
+  sunsetTime?: string;
+  sunriseTime?: string;
 }
 
 export interface ChangeRequest {

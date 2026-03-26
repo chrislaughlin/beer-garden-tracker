@@ -1,4 +1,3 @@
-import { getPlaceholderSunsetIso } from '@/lib/services/sunset-service';
 import { getSubmissionPreviewIds } from '@/lib/submission-preview';
 import { getPublicServerClient, getServiceRoleClient } from '@/lib/supabase';
 import { BELFAST_CENTER } from '@/lib/maps';
@@ -408,7 +407,8 @@ async function hydrateVenues(
       reviewCount,
       photos,
       reviews,
-      sunsetTime: getPlaceholderSunsetIso()
+      sunsetTime: undefined,
+      sunriseTime: undefined
     } satisfies BeerGarden;
   });
 }
