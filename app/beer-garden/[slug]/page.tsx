@@ -1,4 +1,3 @@
-import Image from 'next/image';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { Clock3, MapPin, Star, SunMedium, Camera, MessageSquareWarning } from 'lucide-react';
@@ -6,7 +5,6 @@ import { BeerGardenMap } from '@/components/maps/beer-garden-map';
 import { beerGardenService } from '@/lib/services/beer-garden-service';
 import { DEFAULT_DETAIL_ZOOM } from '@/lib/maps';
 import { getSunsetSummary } from '@/lib/services/sunset-service';
-import { getFallbackPhoto } from '@/lib/data/fallback-photos';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -25,7 +23,6 @@ export default async function BeerGardenDetailPage({
   const venue = await beerGardenService.getBySlug(slug);
   if (!venue) notFound();
   const sunset = await getSunsetSummary(venue.lat, venue.lng);
-  const photoUrl = venue.photos[0]?.url ?? getFallbackPhoto(venue.slug);
   const submissionMessage = feedback?.submitted === '1'
     ? venue.status === 'approved'
       ? 'Venue submitted and published.'
@@ -33,6 +30,12 @@ export default async function BeerGardenDetailPage({
     : venue.status !== 'approved'
       ? 'This pending listing is visible only in this browser until moderation approves it.'
       : null;
+  const hue = Math.floor(Math.random() * 360);
+  const gradientFrom = `hsl(${hue}deg 55% 22%)`;
+  const gradientTo = `hsl(${(hue + 25) % 360}deg 60% 32%)`;
+  const glowPrimary = `hsla(${(hue + 8) % 360}, 65%, 46%, 0.18)`;
+  const glowSecondary = `hsla(${(hue + 8) % 360}, 65%, 46%, 0.12)`;
+
   return (
     <div className="space-y-6">
       {submissionMessage ? (
@@ -41,12 +44,25 @@ export default async function BeerGardenDetailPage({
         </Card>
       ) : null}
       <section className="overflow-hidden rounded-[2rem] bg-white shadow-soft">
-        <div className="relative h-72 w-full">
-          <Image src={photoUrl} alt={venue.name} fill className="object-cover" />
-          <div className="absolute inset-0 bg-gradient-to-t from-slate-950/75 via-slate-900/20 to-transparent" />
-          <div className="absolute inset-x-0 bottom-0 p-5 text-white">
+        <div
+          className="relative h-40 w-full"
+          style={{
+            backgroundImage: `radial-gradient(circle at 20% 25%, ${glowPrimary}, transparent 45%), radial-gradient(circle at 80% 10%, ${glowSecondary}, transparent 35%), linear-gradient(135deg, ${gradientFrom}, ${gradientTo})`
+          }}
+        >
+          <div className="absolute inset-0 bg-gradient-to-br from-slate-900/25 via-slate-950/35 to-slate-950/55 backdrop-blur-[1px]" />
+          <div className="absolute inset-x-0 bottom-0 p-5 text-white drop-shadow-[0_4px_18px_rgba(0,0,0,0.35)]">
             <p className="text-sm uppercase tracking-[0.24em] text-amber-300">Beer garden</p>
-            <div className="mt-2 flex items-end justify-between gap-4"><div><h1 className="text-3xl font-bold">{venue.name}</h1><p className="mt-2 max-w-2xl text-sm text-white/80">{venue.description}</p></div><div className="rounded-3xl bg-white/15 px-4 py-3 text-right backdrop-blur"><div className="text-2xl font-bold">{venue.rating.toFixed(1)}</div><div className="text-xs text-white/80">{venue.reviewCount} reviews</div></div></div>
+            <div className="mt-2 flex items-end justify-between gap-4">
+              <div>
+                <h1 className="text-3xl font-bold">{venue.name}</h1>
+                <p className="mt-2 max-w-2xl text-sm text-white/85">{venue.description}</p>
+              </div>
+              <div className="rounded-3xl bg-white/15 px-4 py-3 text-right backdrop-blur-sm">
+                <div className="text-2xl font-bold">{venue.rating.toFixed(1)}</div>
+                <div className="text-xs text-white/80">{venue.reviewCount} reviews</div>
+              </div>
+            </div>
           </div>
         </div>
       </section>
