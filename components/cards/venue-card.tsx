@@ -76,7 +76,11 @@ export async function VenueCard({ venue }: { venue: BeerGarden }) {
             <span className="inline-flex items-center gap-1"><MapPin className="h-4 w-4" />{formatDistanceKm(venue.distanceMeters)}</span>
             <span className="inline-flex items-center gap-1"><Star className="h-4 w-4 fill-primary text-primary" />{venue.reviewCount} reviews</span>
             {sunset ? (
-              <span className="inline-flex items-center gap-1"><Clock3 className="h-4 w-4" />{Math.max(sunset.minutesLeft, 0)} min to sunset</span>
+              sunset.isDaylight ? (
+                <span className="inline-flex items-center gap-1"><Clock3 className="h-4 w-4" />{Math.max(sunset.minutesLeft, 0)} min to sunset</span>
+              ) : sunset.minutesUntilNextSunrise !== undefined ? (
+                <span className="inline-flex items-center gap-1"><Clock3 className="h-4 w-4" />{Math.max(sunset.minutesUntilNextSunrise, 0)} min to sunrise</span>
+              ) : null
             ) : null}
           </div>
           <div className="flex flex-wrap gap-2">

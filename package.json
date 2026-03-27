@@ -8,7 +8,8 @@
     "start": "next start",
     "env:pull:prod": "npx vercel env pull .env.local --environment=production --yes",
     "lint": "next lint",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test:sunset": "TS_NODE_COMPILER_OPTIONS={\\\"module\\\":\\\"commonjs\\\"} node --require ts-node/register --test lib/services/__tests__/sunset-service.test.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.0",
@@ -45,6 +46,7 @@
     "eslint-config-next": "^15.5.14",
     "postcss": "^8.4.49",
     "tailwindcss": "^3.4.16",
+    "ts-node": "^10.9.2",
     "typescript": "^5.7.2"
   }
 }

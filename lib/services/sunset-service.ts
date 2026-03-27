@@ -8,6 +8,7 @@ export interface SunsetSummary {
   sunriseTime: string;
   minutesLeft: number;
   minutesUntilNextSunrise?: number;
+  isDaylight: boolean;
   label: SunsetLabel;
 }
 
@@ -29,7 +30,57 @@ function buildCacheKey(lat: number, lng: number, dateKey: string) {
   return `${lat.toFixed(4)}:${lng.toFixed(4)}:${dateKey}`;
 }
 
-async function fetchSunTimes(lat: number, lng: number, dateKey: string) {
+async function fetchOpenMeteoSunTimes(lat: number, lng: number, dateKey: string) {
+  const cacheKey = buildCacheKey(lat, lng, dateKey);
+  if (cacheTtlMs > 0) {
+    const cached = sunCache.get(cacheKey);
+    if (cached && Date.now() - cached.cachedAt < cacheTtlMs) {
+      return cached;
+    }
+  }
+
+  const url = new URL('https://api.open-meteo.com/v1/forecast');
+  url.searchParams.set('latitude', lat.toString());
+  url.searchParams.set('longitude', lng.toString());
+  url.searchParams.set('daily', 'sunrise,sunset');
+  url.searchParams.set('timezone', 'auto');
+  url.searchParams.set('start_date', dateKey);
+  url.searchParams.set('end_date', dateKey);
+  url.searchParams.set('past_days', '0');
+  url.searchParams.set('forecast_days', '2');
+
+  try {
+    const res = await fetch(url, { cache: 'no-store' });
+    if (!res.ok) return null;
+
+    const payload = await res.json();
+    const times = payload?.daily?.time as string[] | undefined;
+    const sunrises = payload?.daily?.sunrise as string[] | undefined;
+    const sunsets = payload?.daily?.sunset as string[] | undefined;
+
+    if (!times || !sunrises || !sunsets) return null;
+
+    const index = times.findIndex((day) => day === dateKey);
+    if (index === -1 || !sunrises[index] || !sunsets[index]) return null;
+
+    const sunTimes: CachedSunTimes = {
+      sunrise: sunrises[index],
+      sunset: sunsets[index],
+      dateKey,
+      cachedAt: Date.now()
+    };
+
+    if (cacheTtlMs > 0) {
+      sunCache.set(cacheKey, sunTimes);
+    }
+
+    return sunTimes;
+  } catch {
+    return null;
+  }
+}
+
+async function fetchSunriseSunsetOrg(lat: number, lng: number, dateKey: string) {
   const cacheKey = buildCacheKey(lat, lng, dateKey);
   if (cacheTtlMs > 0) {
     const cached = sunCache.get(cacheKey);
@@ -62,9 +113,15 @@ async function fetchSunTimes(lat: number, lng: number, dateKey: string) {
       sunCache.set(cacheKey, sunTimes);
     }
     return sunTimes;
-  } catch (error) {
+  } catch {
     return null;
   }
+}
+
+async function fetchSunTimes(lat: number, lng: number, dateKey: string) {
+  const primary = await fetchOpenMeteoSunTimes(lat, lng, dateKey);
+  if (primary) return primary;
+  return fetchSunriseSunsetOrg(lat, lng, dateKey);
 }
 
 function pickLabel(minutesLeft: number): SunsetLabel {
@@ -103,15 +160,17 @@ export async function getSunsetSummary(
     return null;
   }
 
-  const sunsetDate = DateTime.fromISO(todayTimes.sunset, { zone: 'utc' }).setZone(timeZone);
-  const sunriseDate = DateTime.fromISO(todayTimes.sunrise, { zone: 'utc' }).setZone(timeZone);
+  const sunsetDate = DateTime.fromISO(todayTimes.sunset, { zone: timeZone });
+  const sunriseDate = DateTime.fromISO(todayTimes.sunrise, { zone: timeZone });
+  const isDaylight = nowZoned >= sunriseDate && nowZoned < sunsetDate;
   const minutesLeft = Math.round(sunsetDate.diff(nowZoned, 'minutes').minutes);
 
   let minutesUntilNextSunrise: number | undefined;
-  if (minutesLeft <= 0 && tomorrowKey) {
+  if (!isDaylight && tomorrowKey) {
     const tomorrowTimes = await fetchSunTimes(lat, lng, tomorrowKey);
-    if (tomorrowTimes?.sunrise) {
-      const nextSunrise = DateTime.fromISO(tomorrowTimes.sunrise, { zone: 'utc' }).setZone(timeZone);
+    const nextSunriseIso = nowZoned < sunriseDate ? todayTimes.sunrise : tomorrowTimes?.sunrise;
+    if (nextSunriseIso) {
+      const nextSunrise = DateTime.fromISO(nextSunriseIso, { zone: timeZone });
       minutesUntilNextSunrise = Math.round(nextSunrise.diff(nowZoned, 'minutes').minutes);
     }
   }
@@ -123,11 +182,14 @@ export async function getSunsetSummary(
     return null;
   }
 
+  const label = isDaylight ? pickLabel(minutesLeft) : 'Sun’s gone';
+
   return {
     sunsetTime,
     sunriseTime,
     minutesLeft,
     minutesUntilNextSunrise,
-    label: pickLabel(minutesLeft)
+    isDaylight,
+    label
   };
 }
